@@ -1,94 +1,212 @@
-# Obsidian Sample Plugin
+# Lint & Format for Obsidian
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Keep your Obsidian notes clean and consistent with professional markdown linting and formatting.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Why Use This Plugin?
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+Writing clean, consistent markdown makes your notes easier to read and maintain. This plugin helps you:
 
-## First time developing plugins?
+- **Maintain Consistency** - Enforce your preferred markdown style across all notes
+- **Save Time** - Automatically format and fix common markdown issues
+- **Stay Focused** - Write freely, then clean up formatting with a single command
+- **Preserve Metadata** - Your YAML front matter stays safe and untouched
 
-Quick starting guide for new plugin devs:
+## Features
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### ✨ Prettier Integration
+Professional-grade markdown formatting powered by Prettier. Get perfectly formatted notes with proper line wrapping, consistent spacing, and clean structure.
 
-## Releasing new releases
+### 🔍 Custom Lint Rules
+Enforce your markdown style preferences:
+- Control line length limits
+- Remove trailing spaces automatically
+- Manage blank lines around headings
+- Choose your preferred emphasis markers (asterisks or underscores)
+- Enforce consistent heading styles
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### 🔧 Auto-Fix Capability
+Many lint issues can be fixed automatically. No need to manually adjust spacing or formatting—just run the auto-fix command.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### ⚙️ Flexible Settings
+Customize everything through Obsidian's settings interface:
+- Enable or disable specific features
+- Configure Prettier formatting options
+- Set your preferred lint rules
+- Choose when formatting happens (on-demand or on-save)
 
-## Adding your plugin to the community plugin list
+### 🏷️ YAML Front Matter Support
+Your metadata is safe! The plugin:
+- Preserves all YAML front matter during formatting
+- Excludes front matter from linting rules
+- Works seamlessly with Obsidian's native metadata system
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### 📄 Multiple File Types
+Works with all your markdown files:
+- `.md` - Standard Markdown
+- `.markdown` - Alternative extension
+- `.mdx` - Markdown with JSX
 
-## How to use
+## Installation
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### From Obsidian Community Plugins (Recommended)
 
-## Manually installing the plugin
+1. Open **Settings** in Obsidian
+2. Navigate to **Community Plugins** and disable Safe Mode if needed
+3. Click **Browse** and search for "Lint & Format"
+4. Click **Install**, then **Enable**
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+### Manual Installation
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+1. Download the latest release from [GitHub Releases](https://github.com/devops-infinity/obsidian-lint-and-format/releases)
+2. Extract the files to your vault's plugins folder:
+   ```
+   <your-vault>/.obsidian/plugins/obsidian-lint-and-format/
+   ```
+3. Reload Obsidian (or restart the app)
+4. Go to **Settings → Community Plugins** and enable "Lint & Format"
 
-## Funding URL
+## How to Use
 
-You can include funding URLs where people who use your plugin can financially support it.
+### Quick Start
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+1. Open any markdown note in Obsidian
+2. Press `Ctrl/Cmd + P` to open the Command Palette
+3. Search for and run any of these commands:
+   - **Format Document** - Format with Prettier
+   - **Lint Document** - Check for style issues
+   - **Lint and Auto-Fix** - Fix issues automatically
+   - **Format and Lint** - Format then check for issues
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+### Available Commands
+
+| Command | Description | Keyboard Shortcut |
+|---------|-------------|-------------------|
+| **Format Document** | Apply Prettier formatting to current file | Set in Settings |
+| **Lint Document** | Show all linting issues with detailed information | Set in Settings |
+| **Lint and Auto-Fix** | Automatically fix all fixable linting issues | Set in Settings |
+| **Format and Lint** | Run formatting and linting together | Set in Settings |
+
+### Configuration
+
+Access settings through **Settings → Community Plugins → Lint & Format**
+
+#### General Settings
+- **Enable auto-formatting** - Allow the plugin to format documents
+- **Enable linting** - Allow the plugin to check for style issues
+- **Format on save** - Automatically format when saving files
+- **Show lint errors** - Display notifications for lint issues
+
+#### Format Settings
+Configure how Prettier formats your markdown:
+- **Print Width** - Maximum line length (default: 80)
+- **Tab Width** - Spaces per indentation level (default: 2)
+- **Use Tabs** - Use tabs instead of spaces
+- **Prose Wrap** - How to wrap long lines
+- **End of Line** - Line ending style (LF, CRLF, or Auto)
+
+#### Lint Rules
+Customize which style rules to enforce:
+- Maximum line length
+- No trailing spaces
+- No multiple blank lines
+- Blank line before/after headings
+- Heading style (ATX vs Setext)
+- List item indentation
+- Emphasis markers (asterisk vs underscore)
+
+## Tips & Best Practices
+
+### Start Simple
+Enable just a few rules at first, then add more as you get comfortable with the plugin.
+
+### Use Format on Save
+For a seamless experience, enable "Format on save" to automatically clean up your notes as you work.
+
+### Customize to Your Style
+There's no "perfect" markdown style—configure the plugin to match how you like to write.
+
+### Lint Before Important Exports
+Run a quick lint check before exporting or publishing your notes to ensure everything looks professional.
+
+## Troubleshooting
+
+### Plugin Not Working?
+1. Make sure the plugin is enabled in Settings → Community Plugins
+2. Try reloading Obsidian (Ctrl/Cmd + R)
+3. Check if your file is a supported format (.md, .markdown, .mdx)
+
+### Formatting Looks Wrong?
+1. Check your Format Settings to adjust Prettier options
+2. Remember: YAML front matter is intentionally excluded from formatting
+
+### Lint Errors Seem Incorrect?
+1. Review your Lint Rules in settings
+2. Disable specific rules you don't need
+3. Some issues may not be auto-fixable and require manual correction
+
+## Development
+
+Want to contribute or build the plugin yourself?
+
+### Prerequisites
+- Node.js 16 or higher
+- npm or yarn
+
+### Build From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/devops-infinity/obsidian-lint-and-format.git
+cd obsidian-lint-and-format
+
+# Install dependencies
+npm install
+
+# Build for production
+npm run build
+
+# Or run in development mode with hot reload
+npm run dev
 ```
 
-If you have multiple URLs, you can also do:
+The built files will be in the root directory. Copy `main.js` and `manifest.json` to your vault's plugin folder for testing.
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+## Contributing
 
-## API Documentation
+Contributions are welcome! Here's how you can help:
 
-See https://github.com/obsidianmd/obsidian-api
+- **Report Bugs** - Open an issue with details about the problem
+- **Suggest Features** - Share your ideas for improvements
+- **Submit Pull Requests** - Fix bugs or add features
+- **Improve Documentation** - Help make the docs clearer
+
+Please check the [GitHub repository](https://github.com/devops-infinity/obsidian-lint-and-format) for contribution guidelines.
+
+## Support
+
+If you find this plugin helpful, consider:
+- ⭐ Starring the repository on GitHub
+- 🐛 Reporting bugs or suggesting features
+- 📢 Sharing it with other Obsidian users
+
+## Author
+
+**Md. Sazzad Hossain Sharkar**
+Principal Architect, Senior Software Engineer, Full-stack Web Developer
+
+- 🌐 Website: [https://szd.sh/](https://szd.sh/)
+- 💻 GitHub: [@SHSharkar](https://github.com/SHSharkar)
+
+## License
+
+MIT License - feel free to use this plugin in your personal or commercial projects.
+
+## Links
+
+- 📦 [GitHub Repository](https://github.com/devops-infinity/obsidian-lint-and-format)
+- 🐛 [Report Issues](https://github.com/devops-infinity/obsidian-lint-and-format/issues)
+- 📖 [Changelog](https://github.com/devops-infinity/obsidian-lint-and-format/releases)
+
+---
+
+Made with ❤️ for the Obsidian community
