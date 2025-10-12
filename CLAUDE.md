@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Obsidian plugin for professional markdown linting and formatting. Combines Prettier for formatting with custom linting rules via Remark/Unified. Supports YAML front matter preservation and provides React-based UI components for results display.
 
-**Stack**: TypeScript 5.9, React 19, Prettier 3.6, Remark/Unified, Obsidian API, esbuild 0.25
+**Stack**: TypeScript 5.9, React 19, Heroicons 2.2, Prettier 3.6, Remark/Unified, Obsidian API, esbuild 0.25
 
 ## Build & Development Commands
 
@@ -49,6 +49,10 @@ npm run version
 - Registers 4 commands: Format Document, Lint Document, Lint and Auto-Fix, Format and Lint
 - Handles format-on-save event registration when enabled
 - Manages settings persistence via `loadData()`/`saveData()`
+- **Status Bar Integration**: Adds two status bar items for lint and format status
+  - Lint status: Shows ✓ (clean), ⚠️ [count] (issues), or 🔍 (disabled)
+  - Format status: Shows ✨ (success), ❌ (error), 📝 (idle), or 📝 (disabled)
+  - Updates on: command execution, file switch, settings changes
 
 **Settings System**
 - `LintAndFormatSettingTab`: Native Obsidian settings integration (no modal popup)
@@ -96,6 +100,19 @@ npm run version
 **Modal Wrappers**
 - `LintResultsModalWrapper` in `src/main.ts`: ReactDOM.createRoot integration
 - Proper cleanup: `root.unmount()` on close to prevent memory leaks
+
+### Heroicons Integration (`src/utils/heroicons.ts`)
+- Hybrid approach: React components where possible, native registration where required
+- **React Components** (`@heroicons/react/24/outline`): Used in React modals
+  - `CheckCircleIcon` - Success state
+  - `XCircleIcon` - Error severity
+  - `ExclamationCircleIcon` - Warning severity
+  - `InformationCircleIcon` - Info severity
+- **Native Registration**: Obsidian `addIcon()` API for status bar
+  - Registers official Heroicons SVG paths as Obsidian icons
+  - Icons: `check-circle`, `exclamation-circle`, `x-circle`, `document-text`, `sparkles`, `magnifying-glass`
+  - viewBox: 0 0 24 24, stroke-width: 1.5 (official Heroicons specs)
+  - Uses `currentColor` for automatic theme adaptation
 
 ### Type System (`src/types.ts`)
 
@@ -169,21 +186,66 @@ onClose() {
 }
 ```
 
+### Status Bar Pattern with Heroicons
+```typescript
+// Register Heroicons in onload()
+import { registerHeroicons } from './utils/heroicons';
+registerHeroicons();
+
+// Create status bar items
+this.lintStatusEl = this.addStatusBarItem();
+this.lintStatusEl.addClass('lint-status');
+
+// Update status with Heroicon
+import { setIcon } from 'obsidian';
+
+updateLintStatus(hasIssues: boolean, issueCount: number) {
+    this.lintStatusEl.empty();
+
+    if (hasIssues) {
+        setIcon(this.lintStatusEl, 'exclamation-circle');
+        this.lintStatusEl.createSpan({ text: ` ${issueCount}` });
+        this.lintStatusEl.style.color = 'var(--text-warning)';
+    } else {
+        setIcon(this.lintStatusEl, 'check-circle');
+        this.lintStatusEl.style.color = 'var(--text-success)';
+    }
+}
+
+// Clean up in onunload()
+this.lintStatusEl?.remove();
+```
+
+### Heroicons in React Components
+```typescript
+// Import from @heroicons/react/24/outline
+import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+
+// Use as React components
+<div style={{ color: getSeverityColor('error') }}>
+    <ExclamationCircleIcon style={{ width: '18px', height: '18px', display: 'inline-block' }} />
+</div>
+
+// Or for larger display
+<CheckCircleIcon style={{ width: '48px', height: '48px' }} />
+```
+
 ## File Organization
 
 ```
 src/
-├── main.ts                    # Plugin entry, commands, settings UI
+├── main.ts                    # Plugin entry, commands, settings UI, status bar
 ├── settings.ts                # Default settings values
 ├── types.ts                   # TypeScript interfaces
 ├── components/                # React UI components
-│   └── LintResultsModal.tsx   # Lint results display
+│   └── LintResultsModal.tsx   # Lint results display with Heroicons
 ├── utils/
 │   ├── formatter.ts           # Prettier wrapper
 │   ├── linter.ts              # Custom linting engine
 │   ├── frontmatter.ts         # YAML front matter handling
 │   ├── prettierConfig.ts      # Prettier configuration
-│   └── designTokens.ts        # Centralized styling system
+│   ├── designTokens.ts        # Centralized styling system
+│   └── heroicons.ts           # Heroicons registration for native UI
 ```
 
 ## Critical Constraints
@@ -195,6 +257,7 @@ src/
 5. **tsconfig.json**: `resolveJsonModule: true` required for manifest.json imports
 6. **Design token usage**: Use centralized design system, avoid scattered inline styles
 7. **Settings reload**: Format-on-save changes require Obsidian reload (notify users)
+8. **Heroicons hybrid approach**: Use `@heroicons/react` components in React, register official SVG paths via `addIcon()` for native UI. Never use emojis for icons - always use Heroicons for consistent, theme-aware UI
 
 ## Testing in Obsidian
 
@@ -207,6 +270,7 @@ src/
 ## Dependencies
 
 **Runtime**:
+- `@heroicons/react@^2.2.0`: Official Heroicons React components (outline variant)
 - `prettier@^3.6.2`: Markdown formatting engine
 - `remark@^15.0.1`: Markdown processor
 - `remark-lint@^10.0.1`: Markdown linting

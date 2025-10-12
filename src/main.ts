@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, setIcon } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import type { PluginSettings, LintResult } from './types';
@@ -6,13 +6,28 @@ import { DEFAULT_SETTINGS } from './settings';
 import { formatMarkdown } from './utils/formatter';
 import { lintMarkdown, fixLintIssues } from './utils/linter';
 import { LintResultsModal } from './components/LintResultsModal';
+import { registerHeroicons } from './utils/heroicons';
 import manifest from '../manifest.json';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
+    private lintStatusEl: HTMLElement | null = null;
+    private formatStatusEl: HTMLElement | null = null;
+    private lastLintResult: { hasIssues: boolean; count: number } = { hasIssues: false, count: 0 };
+    private lastFormatStatus: 'success' | 'error' | 'idle' = 'idle';
 
     async onload() {
         await this.loadSettings();
+
+        registerHeroicons();
+
+        this.lintStatusEl = this.addStatusBarItem();
+        this.lintStatusEl.addClass('lint-status');
+        this.updateLintStatus(false, 0);
+
+        this.formatStatusEl = this.addStatusBarItem();
+        this.formatStatusEl.addClass('format-status');
+        this.updateFormatStatus('idle');
 
         this.addRibbonIcon('check-circle', 'Lint & Format', () => {
             new Notice('Lint & Format Plugin Loaded!');
@@ -32,14 +47,17 @@ export default class LintAndFormatPlugin extends Plugin {
 
                 if (result.error) {
                     new Notice(`Formatting error: ${result.error}`);
+                    this.updateFormatStatus('error');
                     return;
                 }
 
                 if (result.formatted) {
                     editor.setValue(result.content);
                     new Notice('Document formatted successfully!');
+                    this.updateFormatStatus('success');
                 } else {
                     new Notice('Document is already formatted.');
+                    this.updateFormatStatus('success');
                 }
             },
         });
@@ -56,10 +74,13 @@ export default class LintAndFormatPlugin extends Plugin {
                 const content = editor.getValue();
                 const result = await lintMarkdown(content, this.settings.lintRules);
 
+                this.updateLintStatus(result.totalIssues > 0, result.totalIssues);
+
                 new LintResultsModalWrapper(this.app, result, () => {
                     const fixed = fixLintIssues(content, result.issues);
                     editor.setValue(fixed);
                     new Notice('Fixed all auto-fixable issues!');
+                    this.updateLintStatus(false, 0);
                 }).open();
 
                 if (this.settings.showLintErrors && result.totalIssues > 0) {
@@ -82,8 +103,11 @@ export default class LintAndFormatPlugin extends Plugin {
                 const content = editor.getValue();
                 const result = await lintMarkdown(content, this.settings.lintRules);
 
+                this.updateLintStatus(result.totalIssues > 0, result.totalIssues);
+
                 if (result.totalIssues === 0) {
                     new Notice('No issues found!');
+                    this.updateLintStatus(false, 0);
                     return;
                 }
 
@@ -96,6 +120,9 @@ export default class LintAndFormatPlugin extends Plugin {
                 const fixed = fixLintIssues(content, result.issues);
                 editor.setValue(fixed);
                 new Notice(`Fixed ${fixableCount} issue(s)!`);
+
+                const resultAfterFix = await lintMarkdown(fixed, this.settings.lintRules);
+                this.updateLintStatus(resultAfterFix.totalIssues > 0, resultAfterFix.totalIssues);
             },
         });
 
@@ -110,11 +137,15 @@ export default class LintAndFormatPlugin extends Plugin {
 
                     if (formatResult.error) {
                         new Notice(`Formatting error: ${formatResult.error}`);
+                        this.updateFormatStatus('error');
                         return;
                     }
 
                     if (formatResult.formatted) {
                         editor.setValue(formatResult.content);
+                        this.updateFormatStatus('success');
+                    } else {
+                        this.updateFormatStatus('success');
                     }
                 }
 
@@ -122,11 +153,14 @@ export default class LintAndFormatPlugin extends Plugin {
                     const currentContent = editor.getValue();
                     const lintResult = await lintMarkdown(currentContent, this.settings.lintRules);
 
+                    this.updateLintStatus(lintResult.totalIssues > 0, lintResult.totalIssues);
+
                     if (lintResult.totalIssues > 0) {
                         new LintResultsModalWrapper(this.app, lintResult, () => {
                             const fixed = fixLintIssues(currentContent, lintResult.issues);
                             editor.setValue(fixed);
                             new Notice('Fixed all auto-fixable issues!');
+                            this.updateLintStatus(false, 0);
                         }).open();
                     } else {
                         new Notice('Document formatted and no lint issues found!');
@@ -148,14 +182,34 @@ export default class LintAndFormatPlugin extends Plugin {
                             const cursor = editor.getCursor();
                             editor.setValue(result.content);
                             editor.setCursor(cursor);
+                            this.updateFormatStatus('success');
+                        } else if (result.error) {
+                            this.updateFormatStatus('error');
                         }
                     }
                 })
             );
         }
+
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', async () => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (view) {
+                    const content = view.editor.getValue();
+                    if (this.settings.enableLinting) {
+                        const lintResult = await lintMarkdown(content, this.settings.lintRules);
+                        this.updateLintStatus(lintResult.totalIssues > 0, lintResult.totalIssues);
+                    }
+                    this.updateFormatStatus('idle');
+                }
+            })
+        );
     }
 
-    onunload() {}
+    onunload() {
+        this.lintStatusEl?.remove();
+        this.formatStatusEl?.remove();
+    }
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -163,6 +217,75 @@ export default class LintAndFormatPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+    }
+
+    updateLintStatus(hasIssues: boolean, issueCount: number) {
+        if (!this.lintStatusEl) return;
+
+        this.lastLintResult = { hasIssues, count: issueCount };
+        this.lintStatusEl.empty();
+
+        if (!this.settings.enableLinting) {
+            setIcon(this.lintStatusEl, 'magnifying-glass');
+            this.lintStatusEl.setAttribute('title', 'Linting disabled');
+            this.lintStatusEl.style.opacity = '0.5';
+            this.lintStatusEl.style.cursor = 'help';
+            return;
+        }
+
+        if (hasIssues) {
+            setIcon(this.lintStatusEl, 'exclamation-circle');
+            this.lintStatusEl.createSpan({ text: ` ${issueCount}` });
+            this.lintStatusEl.setAttribute('title', `${issueCount} lint issue${issueCount > 1 ? 's' : ''} found`);
+            this.lintStatusEl.style.color = 'var(--text-warning)';
+            this.lintStatusEl.style.cursor = 'help';
+            this.lintStatusEl.style.opacity = '1';
+        } else {
+            setIcon(this.lintStatusEl, 'check-circle');
+            this.lintStatusEl.setAttribute('title', 'No lint issues');
+            this.lintStatusEl.style.color = 'var(--text-success)';
+            this.lintStatusEl.style.cursor = 'help';
+            this.lintStatusEl.style.opacity = '1';
+        }
+    }
+
+    updateFormatStatus(status: 'success' | 'error' | 'idle') {
+        if (!this.formatStatusEl) return;
+
+        this.lastFormatStatus = status;
+        this.formatStatusEl.empty();
+
+        if (!this.settings.enableAutoFormat) {
+            setIcon(this.formatStatusEl, 'document-text');
+            this.formatStatusEl.setAttribute('title', 'Auto-formatting disabled');
+            this.formatStatusEl.style.opacity = '0.5';
+            this.formatStatusEl.style.cursor = 'help';
+            return;
+        }
+
+        switch (status) {
+            case 'success':
+                setIcon(this.formatStatusEl, 'sparkles');
+                this.formatStatusEl.setAttribute('title', 'Document formatted');
+                this.formatStatusEl.style.color = 'var(--text-success)';
+                this.formatStatusEl.style.cursor = 'help';
+                this.formatStatusEl.style.opacity = '1';
+                break;
+            case 'error':
+                setIcon(this.formatStatusEl, 'x-circle');
+                this.formatStatusEl.setAttribute('title', 'Formatting error');
+                this.formatStatusEl.style.color = 'var(--text-error)';
+                this.formatStatusEl.style.cursor = 'help';
+                this.formatStatusEl.style.opacity = '1';
+                break;
+            case 'idle':
+            default:
+                setIcon(this.formatStatusEl, 'document-text');
+                this.formatStatusEl.setAttribute('title', 'Format ready');
+                this.formatStatusEl.style.opacity = '0.8';
+                this.formatStatusEl.style.cursor = 'help';
+                break;
+        }
     }
 }
 
@@ -229,6 +352,7 @@ class LintAndFormatSettingTab extends PluginSettingTab {
                 toggle.setValue(this.plugin.settings.enableAutoFormat).onChange(async (value) => {
                     this.plugin.settings.enableAutoFormat = value;
                     await this.plugin.saveSettings();
+                    this.plugin.updateFormatStatus('idle');
                 })
             );
 
@@ -239,6 +363,7 @@ class LintAndFormatSettingTab extends PluginSettingTab {
                 toggle.setValue(this.plugin.settings.enableLinting).onChange(async (value) => {
                     this.plugin.settings.enableLinting = value;
                     await this.plugin.saveSettings();
+                    this.plugin.updateLintStatus(false, 0);
                 })
             );
 

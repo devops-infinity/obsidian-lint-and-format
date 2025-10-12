@@ -1,4 +1,5 @@
 import React from 'react';
+import { CheckCircleIcon, XCircleIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import type { LintResult } from '../types';
 import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/designTokens';
 
@@ -23,15 +24,17 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onCl
     };
 
     const getSeverityIcon = (severity: string) => {
+        const iconProps = { style: { width: '18px', height: '18px', display: 'inline-block' } };
+
         switch (severity) {
             case 'error':
-                return '❌';
+                return <XCircleIcon {...iconProps} />;
             case 'warning':
-                return '⚠️';
+                return <ExclamationCircleIcon {...iconProps} />;
             case 'info':
-                return 'ℹ️';
+                return <InformationCircleIcon {...iconProps} />;
             default:
-                return '•';
+                return <span style={{ fontSize: '18px' }}>•</span>;
         }
     };
 
@@ -78,7 +81,9 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onCl
                     textAlign: 'center',
                     color: colors.severity.success,
                 }}>
-                    <div style={{ fontSize: '48px', marginBottom: spacing.sm }}>✓</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.sm }}>
+                        <CheckCircleIcon style={{ width: '48px', height: '48px' }} />
+                    </div>
                     <h3>No issues found!</h3>
                     <p>Your document follows all configured linting rules.</p>
                 </div>
@@ -111,7 +116,9 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onCl
                                 }}
                             >
                                 <div style={createStyles.flexRow(spacing.sm)}>
-                                    <span style={{ fontSize: '18px' }}>{getSeverityIcon(issue.severity)}</span>
+                                    <div style={{ color: getSeverityColor(issue.severity) }}>
+                                        {getSeverityIcon(issue.severity)}
+                                    </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{
                                             ...createStyles.flexRow('8px'),

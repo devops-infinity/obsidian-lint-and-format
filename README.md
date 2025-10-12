@@ -24,6 +24,13 @@ Enforce your markdown style preferences:
 - Choose your preferred emphasis markers (asterisks or underscores)
 - Enforce consistent heading styles
 
+### 📊 Status Bar Integration
+Keep track of your document's health at a glance with beautiful Heroicons status bar indicators:
+- **Lint Status** - Shows ✓ (check-circle) when clean, ⚠️ (exclamation-circle) with issue count when problems detected
+- **Format Status** - Shows ✨ (sparkles) after successful formatting, ✕ (x-circle) on errors, 📄 (document-text) when ready
+- Status updates automatically when you switch between documents or run commands
+- Icons adapt to your Obsidian theme (light/dark mode)
+
 ### 🔧 Auto-Fix Capability
 Many lint issues can be fixed automatically. No need to manually adjust spacing or formatting—just run the auto-fix command.
 
@@ -98,10 +105,10 @@ Access settings through **Settings → Community Plugins → Lint & Format**
 
 #### Format Settings
 Configure how Prettier formats your markdown:
-- **Print Width** - Maximum line length (default: 80)
+- **Print Width** - Maximum line length (default: 100, recommended for balanced readability)
 - **Tab Width** - Spaces per indentation level (default: 2)
 - **Use Tabs** - Use tabs instead of spaces
-- **Prose Wrap** - How to wrap long lines
+- **Prose Wrap** - How to wrap long lines (default: preserve)
 - **End of Line** - Line ending style (LF, CRLF, or Auto)
 
 #### Lint Rules
