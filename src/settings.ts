@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showLintErrors: true,
     prettierConfig: DEFAULT_PRETTIER_CONFIG,
     lintRules: {
-        maxLineLength: 80,
+        maxLineLength: 100,
         noTrailingSpaces: true,
         noMultipleBlankLines: true,
         requireBlankLineBeforeHeading: true,

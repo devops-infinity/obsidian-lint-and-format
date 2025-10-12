@@ -269,10 +269,10 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Print width')
-            .setDesc('Wrap prose at this column width (recommended: 80-100)')
+            .setDesc('Maximum line length before wrapping. Common values: 80 (strict), 100 (balanced - default), 120 (relaxed)')
             .addText((text) =>
                 text
-                    .setPlaceholder('80')
+                    .setPlaceholder('100')
                     .setValue(String(this.plugin.settings.prettierConfig.printWidth))
                     .onChange(async (value) => {
                         const num = parseInt(value);
@@ -311,7 +311,7 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Prose wrap')
-            .setDesc('How to wrap prose in markdown files')
+            .setDesc('How to wrap text: preserve (recommended for notes - respects your formatting), always (enforces print width), never (soft wrap only)')
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption('always', 'Always wrap')
@@ -346,10 +346,10 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Maximum line length')
-            .setDesc('Maximum characters per line (0 to disable)')
+            .setDesc('Maximum characters per line for linting (default: 100 matches print width). Set to 0 to disable for creative writing')
             .addText((text) =>
                 text
-                    .setPlaceholder('80')
+                    .setPlaceholder('100')
                     .setValue(String(this.plugin.settings.lintRules.maxLineLength))
                     .onChange(async (value) => {
                         const num = parseInt(value);

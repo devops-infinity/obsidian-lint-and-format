@@ -10,7 +10,7 @@ export interface PrettierMarkdownConfig extends Options {
 
 export const DEFAULT_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     parser: 'markdown',
-    printWidth: 80,
+    printWidth: 100,
     tabWidth: 2,
     useTabs: false,
     semi: true,
@@ -18,7 +18,7 @@ export const DEFAULT_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     trailingComma: 'es5',
     bracketSpacing: true,
     arrowParens: 'always',
-    proseWrap: 'always',
+    proseWrap: 'preserve',
     endOfLine: 'lf',
     embeddedLanguageFormatting: 'auto',
 };
@@ -28,7 +28,7 @@ export const ENTERPRISE_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     printWidth: 100,
     tabWidth: 2,
     useTabs: false,
-    proseWrap: 'always',
+    proseWrap: 'preserve',
     endOfLine: 'lf',
     embeddedLanguageFormatting: 'auto',
 };
