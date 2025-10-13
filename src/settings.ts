@@ -8,15 +8,13 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showLintErrors: true,
     prettierConfig: DEFAULT_PRETTIER_CONFIG,
     lintRules: {
-        maxLineLength: 100,
         noTrailingSpaces: true,
         noMultipleBlankLines: true,
         requireBlankLineBeforeHeading: true,
         requireBlankLineAfterHeading: true,
         headingStyle: 'atx',
-        listItemIndent: 'space',
-        emphasisMarker: '*',
-        strongMarker: '**',
+        emphasisMarker: 'consistent',
+        strongMarker: 'consistent',
         defaultCodeLanguage: 'text',
     },
 };

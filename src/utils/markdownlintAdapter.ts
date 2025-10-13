@@ -1,4 +1,5 @@
 import type { LintIssue, LintResult, LintRules } from '../types';
+import type { PrettierMarkdownConfig } from './prettierConfig';
 
 /**
  * Markdownlint Rules Configuration
@@ -116,20 +117,20 @@ export interface MarkdownlintConfig {
     MD059?: boolean | { link_texts?: string[] };
 }
 
-export function mapLintRulesToMarkdownlintConfig(rules: LintRules): MarkdownlintConfig {
+export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfig: PrettierMarkdownConfig): MarkdownlintConfig {
     const config: MarkdownlintConfig = {
         default: true,
         MD001: true,
         MD003: { style: rules.headingStyle === 'consistent' ? 'consistent' : rules.headingStyle },
         MD004: { style: 'asterisk' },
         MD005: true,
-        MD007: { indent: 2 },
+        MD007: { indent: prettierConfig.useTabs ? 1 : prettierConfig.tabWidth },
         MD009: { br_spaces: 2, list_item_empty_lines: false },
-        MD010: { code_blocks: true },
+        MD010: { code_blocks: !prettierConfig.useTabs },
         MD011: true,
         MD012: rules.noMultipleBlankLines ? { maximum: 1 } : false,
-        MD013: rules.maxLineLength > 0 ? {
-            line_length: rules.maxLineLength,
+        MD013: prettierConfig.printWidth > 0 ? {
+            line_length: prettierConfig.printWidth,
             code_blocks: false,
             tables: false,
             headings: false
@@ -190,10 +191,11 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules): Markdownlint
 
 export async function lintMarkdownWithMarkdownlint(
     content: string,
-    rules: LintRules
+    rules: LintRules,
+    prettierConfig: PrettierMarkdownConfig
 ): Promise<LintResult> {
     try {
-        const config = mapLintRulesToMarkdownlintConfig(rules);
+        const config = mapLintRulesToMarkdownlintConfig(rules, prettierConfig);
 
         const options: any = {
             strings: {

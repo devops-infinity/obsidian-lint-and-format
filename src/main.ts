@@ -75,7 +75,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const content = editor.getValue();
-                const result = await lintMarkdown(content, this.settings.lintRules);
+                const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
 
                 this.updateLintStatus(result);
 
@@ -83,7 +83,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
                     editor.setValue(fixed);
 
-                    const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+                    const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
                     this.updateLintStatus(recheckResult);
 
                     if (recheckResult.totalIssues === 0) {
@@ -95,7 +95,7 @@ export default class LintAndFormatPlugin extends Plugin {
                                 const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                                 editor.setValue(refixed);
 
-                                const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                                const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
                                 this.updateLintStatus(finalResult);
 
                                 if (finalResult.totalIssues === 0) {
@@ -126,7 +126,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const content = editor.getValue();
-                const result = await lintMarkdown(content, this.settings.lintRules);
+                const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
 
                 this.updateLintStatus(result);
 
@@ -146,7 +146,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 editor.setValue(fixed);
                 new Notice(`Fixed ${fixableCount} issue(s)!`);
 
-                const resultAfterFix = await lintMarkdown(fixed, this.settings.lintRules);
+                const resultAfterFix = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
                 this.updateLintStatus(resultAfterFix);
             },
         });
@@ -176,7 +176,7 @@ export default class LintAndFormatPlugin extends Plugin {
 
                 if (this.settings.enableLinting) {
                     const currentContent = editor.getValue();
-                    const lintResult = await lintMarkdown(currentContent, this.settings.lintRules);
+                    const lintResult = await lintMarkdown(currentContent, this.settings.lintRules, this.settings.prettierConfig);
 
                     this.updateLintStatus(lintResult);
 
@@ -185,7 +185,7 @@ export default class LintAndFormatPlugin extends Plugin {
                             const fixed = await fixLintIssues(currentContent, lintResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                             editor.setValue(fixed);
 
-                            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+                            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
                             this.updateLintStatus(recheckResult);
 
                             if (recheckResult.totalIssues === 0) {
@@ -197,7 +197,7 @@ export default class LintAndFormatPlugin extends Plugin {
                                         const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                                         editor.setValue(refixed);
 
-                                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
                                         this.updateLintStatus(finalResult);
 
                                         if (finalResult.totalIssues === 0) {
@@ -271,7 +271,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 if (view) {
                     const content = view.editor.getValue();
                     if (this.settings.enableLinting) {
-                        const lintResult = await lintMarkdown(content, this.settings.lintRules);
+                        const lintResult = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
                         this.updateLintStatus(lintResult);
                     }
                     this.updateFormatStatus('idle');
@@ -306,7 +306,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         const content = view.editor.getValue();
-        const result = await lintMarkdown(content, this.settings.lintRules);
+        const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
 
         this.updateLintStatus(result);
 
@@ -319,7 +319,7 @@ export default class LintAndFormatPlugin extends Plugin {
             const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
             view.editor.setValue(fixed);
 
-            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
             this.updateLintStatus(recheckResult);
 
             if (recheckResult.totalIssues === 0) {
@@ -331,7 +331,7 @@ export default class LintAndFormatPlugin extends Plugin {
                         const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                         view.editor.setValue(refixed);
 
-                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
                         this.updateLintStatus(finalResult);
 
                         if (finalResult.totalIssues === 0) {
@@ -500,6 +500,21 @@ class LintAndFormatSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'Lint & Format Settings' });
 
         new Setting(containerEl)
+            .setName('Reset to Default Settings')
+            .setDesc('Restore all settings to factory defaults. This action cannot be undone.')
+            .addButton((button) =>
+                button
+                    .setButtonText('Reset All Settings')
+                    .setWarning()
+                    .onClick(async () => {
+                        const confirmed = await this.confirmReset();
+                        if (confirmed) {
+                            await this.resetToDefaults();
+                        }
+                    })
+            );
+
+        new Setting(containerEl)
             .setName('General Settings')
             .setHeading();
 
@@ -552,10 +567,10 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Print width')
-            .setDesc('Maximum line length before wrapping. Common values: 80 (strict), 100 (balanced - default), 120 (relaxed)')
+            .setDesc('Maximum line length before wrapping. Common values: 80 (default - Prettier standard), 100 (relaxed), 120 (wide). This setting also controls the linter\'s line length rule (MD013).')
             .addText((text) =>
                 text
-                    .setPlaceholder('100')
+                    .setPlaceholder('80')
                     .setValue(String(this.plugin.settings.prettierConfig.printWidth))
                     .onChange(async (value) => {
                         const num = parseInt(value);
@@ -568,7 +583,7 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Tab width')
-            .setDesc('Number of spaces per indentation level')
+            .setDesc('Number of spaces per indentation level. This setting also controls list indentation in the linter (MD007).')
             .addText((text) =>
                 text
                     .setPlaceholder('2')
@@ -584,7 +599,7 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Use tabs')
-            .setDesc('Use tabs instead of spaces for indentation')
+            .setDesc('Use tabs instead of spaces for indentation. This setting also controls hard tab detection in the linter (MD010).')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.prettierConfig.useTabs).onChange(async (value) => {
                     this.plugin.settings.prettierConfig.useTabs = value;
@@ -626,22 +641,6 @@ class LintAndFormatSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Lint Rules')
             .setHeading();
-
-        new Setting(containerEl)
-            .setName('Maximum line length')
-            .setDesc('Maximum characters per line for linting (default: 100 matches print width). Set to 0 to disable for creative writing')
-            .addText((text) =>
-                text
-                    .setPlaceholder('100')
-                    .setValue(String(this.plugin.settings.lintRules.maxLineLength))
-                    .onChange(async (value) => {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num >= 0) {
-                            this.plugin.settings.lintRules.maxLineLength = num;
-                            await this.plugin.saveSettings();
-                        }
-                    })
-            );
 
         new Setting(containerEl)
             .setName('No trailing spaces')
@@ -709,28 +708,13 @@ class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('List item indentation')
-            .setDesc('How list items should be indented')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('space', 'Space')
-                    .addOption('tab', 'Tab')
-                    .addOption('mixed', 'Mixed')
-                    .setValue(this.plugin.settings.lintRules.listItemIndent)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.listItemIndent = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
             .setName('Emphasis marker')
-            .setDesc('Character for italic/emphasis text')
+            .setDesc('Italic/emphasis text style (default: consistent - matches first occurrence). Options: * (asterisk), _ (underscore), or consistent.')
             .addDropdown((dropdown) =>
                 dropdown
+                    .addOption('consistent', 'Consistent (default)')
                     .addOption('*', 'Asterisk (*)')
                     .addOption('_', 'Underscore (_)')
-                    .addOption('consistent', 'Consistent')
                     .setValue(this.plugin.settings.lintRules.emphasisMarker)
                     .onChange(async (value) => {
                         this.plugin.settings.lintRules.emphasisMarker = value as any;
@@ -740,12 +724,12 @@ class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Strong marker')
-            .setDesc('Character for bold/strong text')
+            .setDesc('Bold/strong text style (default: consistent - matches first occurrence). Options: ** (double asterisk), __ (double underscore), or consistent.')
             .addDropdown((dropdown) =>
                 dropdown
+                    .addOption('consistent', 'Consistent (default)')
                     .addOption('**', 'Double Asterisk (**)')
                     .addOption('__', 'Double Underscore (__)')
-                    .addOption('consistent', 'Consistent')
                     .setValue(this.plugin.settings.lintRules.strongMarker)
                     .onChange(async (value) => {
                         this.plugin.settings.lintRules.strongMarker = value as any;
@@ -837,5 +821,61 @@ class LintAndFormatSettingTab extends PluginSettingTab {
         const frontMatterEl = containerEl.createDiv();
         frontMatterEl.createEl('strong', { text: 'YAML Front Matter: ' });
         frontMatterEl.appendText('Front matter is preserved during formatting and excluded from linting rules.');
+    }
+
+    async confirmReset(): Promise<boolean> {
+        return new Promise((resolve) => {
+            const modal = new Modal(this.app);
+            modal.titleEl.setText('Reset to Default Settings');
+
+            modal.contentEl.createEl('p', {
+                text: 'Are you sure you want to reset all settings to factory defaults? This will:'
+            });
+
+            const list = modal.contentEl.createEl('ul');
+            list.createEl('li', { text: 'Reset all formatting settings (Prettier config)' });
+            list.createEl('li', { text: 'Reset all linting rules' });
+            list.createEl('li', { text: 'Reset general plugin preferences' });
+
+            modal.contentEl.createEl('p', {
+                text: 'This action cannot be undone.',
+                cls: 'mod-warning'
+            });
+
+            const buttonContainer = modal.contentEl.createDiv();
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.justifyContent = 'flex-end';
+            buttonContainer.style.gap = '10px';
+            buttonContainer.style.marginTop = '20px';
+
+            const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+            cancelButton.addEventListener('click', () => {
+                modal.close();
+                resolve(false);
+            });
+
+            const resetButton = buttonContainer.createEl('button', {
+                text: 'Reset to Defaults',
+                cls: 'mod-warning'
+            });
+            resetButton.addEventListener('click', () => {
+                modal.close();
+                resolve(true);
+            });
+
+            modal.open();
+        });
+    }
+
+    async resetToDefaults(): Promise<void> {
+        this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+        await this.plugin.saveSettings();
+
+        this.plugin.updateLintStatus(null);
+        this.plugin.updateFormatStatus('idle');
+
+        this.display();
+
+        new Notice('Settings reset to factory defaults successfully!');
     }
 }

@@ -36,13 +36,11 @@ export interface PluginSettings {
 }
 
 export interface LintRules {
-    maxLineLength: number;
     noTrailingSpaces: boolean;
     noMultipleBlankLines: boolean;
     requireBlankLineBeforeHeading: boolean;
     requireBlankLineAfterHeading: boolean;
     headingStyle: 'atx' | 'setext' | 'consistent';
-    listItemIndent: 'space' | 'tab' | 'mixed';
     emphasisMarker: '*' | '_' | 'consistent';
     strongMarker: '**' | '__' | 'consistent';
     defaultCodeLanguage: string;

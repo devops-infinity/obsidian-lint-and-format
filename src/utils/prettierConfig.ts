@@ -10,7 +10,7 @@ export interface PrettierMarkdownConfig extends Options {
 
 export const DEFAULT_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     parser: 'markdown',
-    printWidth: 100,
+    printWidth: 80,
     tabWidth: 2,
     useTabs: false,
     semi: true,
