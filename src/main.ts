@@ -289,7 +289,7 @@ export default class LintAndFormatPlugin extends Plugin {
         this.lintStatusEl.empty();
 
         if (!this.settings.enableLinting) {
-            setIcon(this.lintStatusEl, 'magnifying-glass');
+            setIcon(this.lintStatusEl, 'x-circle');
             this.lintStatusEl.setAttribute('aria-label', 'Linting is disabled. Click to run lint check anyway.');
             this.lintStatusEl.style.opacity = '0.5';
             this.lintStatusEl.style.cursor = 'pointer';
@@ -297,7 +297,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         if (result && result.totalIssues > 0) {
-            setIcon(this.lintStatusEl, 'exclamation-circle');
+            setIcon(this.lintStatusEl, 'face-frown');
             const countSpan = this.lintStatusEl.createSpan({ text: `${result.totalIssues}` });
             countSpan.style.marginLeft = '4px';
             this.lintStatusEl.setAttribute('aria-label', `${result.totalIssues} lint issue${result.totalIssues > 1 ? 's' : ''} found. Click to view details.`);
@@ -305,7 +305,7 @@ export default class LintAndFormatPlugin extends Plugin {
             this.lintStatusEl.style.cursor = 'pointer';
             this.lintStatusEl.style.opacity = '1';
         } else {
-            setIcon(this.lintStatusEl, 'check-circle');
+            setIcon(this.lintStatusEl, 'paint-brush');
             this.lintStatusEl.setAttribute('aria-label', 'No lint issues found. Click to re-check.');
             this.lintStatusEl.style.color = 'var(--text-success)';
             this.lintStatusEl.style.cursor = 'pointer';
