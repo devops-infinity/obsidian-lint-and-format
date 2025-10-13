@@ -156,6 +156,7 @@ export default class LintAndFormatPlugin extends Plugin {
             name: 'Format and Lint Document',
             editorCallback: async (editor: Editor, _view: MarkdownView) => {
                 const content = editor.getValue();
+                let formattedContent = content;
 
                 if (this.settings.enableAutoFormat) {
                     const formatResult = await formatMarkdown(content, this.settings.prettierConfig);
@@ -167,7 +168,8 @@ export default class LintAndFormatPlugin extends Plugin {
                     }
 
                     if (formatResult.formatted) {
-                        editor.setValue(formatResult.content);
+                        formattedContent = formatResult.content;
+                        editor.setValue(formattedContent);
                         this.updateFormatStatus('success');
                     } else {
                         this.updateFormatStatus('success');
@@ -175,42 +177,55 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 if (this.settings.enableLinting) {
-                    const currentContent = editor.getValue();
-                    const lintResult = await lintMarkdown(currentContent, this.settings.lintRules, this.settings.prettierConfig);
+                    const lintResult = await lintMarkdown(formattedContent, this.settings.lintRules, this.settings.prettierConfig);
 
-                    this.updateLintStatus(lintResult);
+                    const fixableCount = lintResult.issues.filter((i) => i.fixable).length;
 
-                    if (lintResult.totalIssues > 0) {
-                        new LintResultsModalWrapper(this.app, lintResult, async () => {
-                            const fixed = await fixLintIssues(currentContent, lintResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                            editor.setValue(fixed);
+                    if (fixableCount > 0) {
+                        const autoFixed = await fixLintIssues(formattedContent, lintResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
+                        editor.setValue(autoFixed);
 
-                            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
-                            this.updateLintStatus(recheckResult);
+                        const recheckResult = await lintMarkdown(autoFixed, this.settings.lintRules, this.settings.prettierConfig);
+                        this.updateLintStatus(recheckResult);
 
-                            if (recheckResult.totalIssues === 0) {
-                                new Notice('All issues fixed successfully!');
-                            } else {
-                                new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
+                        if (recheckResult.totalIssues === 0) {
+                            new Notice(`Document formatted and ${fixableCount} lint issue(s) auto-fixed!`);
+                        } else {
+                            new Notice(`Document formatted, ${fixableCount} issues fixed. ${recheckResult.totalIssues} issue(s) remaining.`);
+
+                            if (recheckResult.issues.filter((i) => i.fixable).length > 0) {
                                 setTimeout(() => {
                                     new LintResultsModalWrapper(this.app, recheckResult, async () => {
-                                        const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
+                                        const refixed = await fixLintIssues(autoFixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                                         editor.setValue(refixed);
 
                                         const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
                                         this.updateLintStatus(finalResult);
 
                                         if (finalResult.totalIssues === 0) {
-                                            new Notice('All issues fixed successfully!');
+                                            new Notice('All remaining issues fixed!');
                                         } else {
-                                            new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
+                                            new Notice(`${finalResult.totalIssues} issue(s) remaining (not auto-fixable).`);
                                         }
                                     }).open();
                                 }, 100);
+                            } else {
+                                setTimeout(() => {
+                                    new LintResultsModalWrapper(this.app, recheckResult, async () => {}).open();
+                                }, 100);
                             }
-                        }).open();
+                        }
                     } else {
-                        new Notice('Document formatted and no lint issues found!');
+                        this.updateLintStatus(lintResult);
+
+                        if (lintResult.totalIssues === 0) {
+                            new Notice('Document formatted and no lint issues found!');
+                        } else {
+                            new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
+                            setTimeout(() => {
+                                new LintResultsModalWrapper(this.app, lintResult, async () => {}).open();
+                            }, 100);
+                        }
                     }
                 }
             },

@@ -21,6 +21,7 @@ export const DEFAULT_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     proseWrap: 'preserve',
     endOfLine: 'lf',
     embeddedLanguageFormatting: 'auto',
+    singleAttributePerLine: false,
 };
 
 export const ENTERPRISE_PRETTIER_CONFIG: PrettierMarkdownConfig = {
@@ -31,6 +32,7 @@ export const ENTERPRISE_PRETTIER_CONFIG: PrettierMarkdownConfig = {
     proseWrap: 'preserve',
     endOfLine: 'lf',
     embeddedLanguageFormatting: 'auto',
+    singleAttributePerLine: false,
 };
 
 export function mergePrettierConfig(
