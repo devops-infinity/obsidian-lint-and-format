@@ -120,9 +120,13 @@ export interface MarkdownlintConfig {
 export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfig: PrettierMarkdownConfig): MarkdownlintConfig {
     const config: MarkdownlintConfig = {
         default: true,
-        MD001: true,
+        MD001: rules.headingIncrement,
         MD003: { style: rules.headingStyle === 'consistent' ? 'consistent' : rules.headingStyle },
-        MD004: { style: 'asterisk' },
+        MD004: {
+            style: rules.unorderedListStyle === 'consistent'
+                ? 'consistent'
+                : rules.unorderedListStyle
+        },
         MD005: true,
         MD007: { indent: prettierConfig.useTabs ? 1 : prettierConfig.tabWidth },
         MD009: { br_spaces: 2, list_item_empty_lines: false },
@@ -145,31 +149,39 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
             lines_below: rules.requireBlankLineAfterHeading ? 1 : 0
         } : false,
         MD023: true,
-        MD024: { siblings_only: false },
-        MD025: { level: 1 },
-        MD026: { punctuation: '.,;:!。，；：！' },
+        MD024: rules.noDuplicateHeadings ? { siblings_only: false } : false,
+        MD025: rules.singleH1 ? { level: 1 } : false,
+        MD026: rules.noTrailingPunctuationInHeading ? { punctuation: '.,;:!。，；：！' } : false,
         MD027: false,
         MD028: false,
-        MD029: { style: 'one_or_ordered' },
-        MD030: { ul_single: 1, ol_single: 1, ul_multi: 1, ol_multi: 1 },
-        MD031: { list_items: true },
-        MD032: true,
+        MD029: { style: rules.orderedListStyle },
+        MD030: rules.listMarkerSpace ? { ul_single: 1, ol_single: 1, ul_multi: 1, ol_multi: 1 } : false,
+        MD031: rules.blankLinesAroundFences ? { list_items: true } : false,
+        MD032: rules.blankLinesAroundLists,
         MD033: { allowed_elements: [] },
-        MD034: false,
+        MD034: !rules.noBareUrls,
         MD035: { style: 'consistent' },
         MD036: { punctuation: '.,;:!?。，；：！？' },
         MD037: true,
         MD038: true,
         MD039: true,
         MD040: { allowed_languages: [] },
-        MD041: false,
+        MD041: rules.firstLineH1,
         MD042: true,
         MD043: false,
         MD044: false,
-        MD045: true,
-        MD046: { style: 'fenced' },
-        MD047: true,
-        MD048: { style: 'backtick' },
+        MD045: !rules.noAltText,
+        MD046: {
+            style: rules.codeBlockStyle === 'consistent'
+                ? 'consistent'
+                : rules.codeBlockStyle
+        },
+        MD047: rules.filesEndWithNewline,
+        MD048: {
+            style: rules.codeFenceStyle === 'consistent'
+                ? 'consistent'
+                : rules.codeFenceStyle
+        },
         MD049: { style: rules.emphasisMarker === 'consistent' ? 'consistent' : (rules.emphasisMarker === '*' ? 'asterisk' : 'underscore') },
         MD050: { style: rules.strongMarker === '__' ? 'underscore' : 'asterisk' },
         MD051: true,

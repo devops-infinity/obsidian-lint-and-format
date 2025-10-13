@@ -44,4 +44,19 @@ export interface LintRules {
     emphasisMarker: '*' | '_' | 'consistent';
     strongMarker: '**' | '__' | 'consistent';
     defaultCodeLanguage: string;
+    headingIncrement: boolean;
+    noDuplicateHeadings: boolean;
+    singleH1: boolean;
+    noTrailingPunctuationInHeading: boolean;
+    firstLineH1: boolean;
+    unorderedListStyle: 'asterisk' | 'plus' | 'dash' | 'consistent';
+    orderedListStyle: 'one' | 'ordered' | 'one_or_ordered';
+    listMarkerSpace: boolean;
+    blankLinesAroundLists: boolean;
+    blankLinesAroundFences: boolean;
+    codeBlockStyle: 'fenced' | 'indented' | 'consistent';
+    codeFenceStyle: 'backtick' | 'tilde' | 'consistent';
+    noBareUrls: boolean;
+    noAltText: boolean;
+    filesEndWithNewline: boolean;
 }

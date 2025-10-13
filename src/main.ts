@@ -639,7 +639,194 @@ class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Lint Rules')
+            .setName('Lint Rules: Structure')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('Heading increment (MD001)')
+            .setDesc('Heading levels should only increment by one level at a time (e.g., # then ##, not # then ###)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.headingIncrement).onChange(async (value) => {
+                    this.plugin.settings.lintRules.headingIncrement = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('No duplicate headings (MD024)')
+            .setDesc('Multiple headings with the same content are not allowed')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.noDuplicateHeadings).onChange(async (value) => {
+                    this.plugin.settings.lintRules.noDuplicateHeadings = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Single H1 (MD025)')
+            .setDesc('Only one top-level heading allowed per document')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.singleH1).onChange(async (value) => {
+                    this.plugin.settings.lintRules.singleH1 = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('No trailing punctuation in heading (MD026)')
+            .setDesc('Headings should not end with punctuation')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.noTrailingPunctuationInHeading).onChange(async (value) => {
+                    this.plugin.settings.lintRules.noTrailingPunctuationInHeading = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('First line H1 (MD041)')
+            .setDesc('First line in a file should be a top-level heading')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.firstLineH1).onChange(async (value) => {
+                    this.plugin.settings.lintRules.firstLineH1 = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Files end with newline (MD047)')
+            .setDesc('Files should end with a single newline character')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.filesEndWithNewline).onChange(async (value) => {
+                    this.plugin.settings.lintRules.filesEndWithNewline = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Lint Rules: Lists')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('Unordered list style (MD004)')
+            .setDesc('Enforce consistent marker for unordered lists')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('asterisk', 'Asterisk (*)')
+                    .addOption('plus', 'Plus (+)')
+                    .addOption('dash', 'Dash (-)')
+                    .addOption('consistent', 'Consistent')
+                    .setValue(this.plugin.settings.lintRules.unorderedListStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.lintRules.unorderedListStyle = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Ordered list style (MD029)')
+            .setDesc('Ordered list item prefix style')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('one', 'All 1s (1. 1. 1.)')
+                    .addOption('ordered', 'Sequential (1. 2. 3.)')
+                    .addOption('one_or_ordered', 'One or Ordered')
+                    .setValue(this.plugin.settings.lintRules.orderedListStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.lintRules.orderedListStyle = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('List marker spacing (MD030)')
+            .setDesc('Spaces after list markers should be consistent')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.listMarkerSpace).onChange(async (value) => {
+                    this.plugin.settings.lintRules.listMarkerSpace = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Blank lines around lists (MD032)')
+            .setDesc('Lists should be surrounded by blank lines')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundLists).onChange(async (value) => {
+                    this.plugin.settings.lintRules.blankLinesAroundLists = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Lint Rules: Code Blocks')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('Blank lines around code blocks (MD031)')
+            .setDesc('Fenced code blocks should be surrounded by blank lines')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundFences).onChange(async (value) => {
+                    this.plugin.settings.lintRules.blankLinesAroundFences = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Code block style (MD046)')
+            .setDesc('Preferred code block style')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('fenced', 'Fenced (```)')
+                    .addOption('indented', 'Indented (4 spaces)')
+                    .addOption('consistent', 'Consistent')
+                    .setValue(this.plugin.settings.lintRules.codeBlockStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.lintRules.codeBlockStyle = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Code fence style (MD048)')
+            .setDesc('Preferred code fence character')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('backtick', 'Backtick (```)')
+                    .addOption('tilde', 'Tilde (~~~)')
+                    .addOption('consistent', 'Consistent')
+                    .setValue(this.plugin.settings.lintRules.codeFenceStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.lintRules.codeFenceStyle = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Lint Rules: Links & Images')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('No bare URLs (MD034)')
+            .setDesc('Bare URLs should be enclosed in angle brackets or formatted as links')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.noBareUrls).onChange(async (value) => {
+                    this.plugin.settings.lintRules.noBareUrls = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Require image alt text (MD045)')
+            .setDesc('Images should have alternate text (alt text) for accessibility')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.lintRules.noAltText).onChange(async (value) => {
+                    this.plugin.settings.lintRules.noAltText = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Lint Rules: Spacing')
             .setHeading();
 
         new Setting(containerEl)
