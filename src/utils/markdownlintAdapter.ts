@@ -254,6 +254,78 @@ export async function lintMarkdownWithMarkdownlint(
     }
 }
 
+export function fixOversizedFenceMarkers(content: string): string {
+    const lines = content.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        const backtickMatch = line.match(/^(`{4,})(.*)$/);
+        if (backtickMatch) {
+            lines[i] = '```' + backtickMatch[2];
+            continue;
+        }
+
+        const tildeMatch = line.match(/^(~{4,})(.*)$/);
+        if (tildeMatch) {
+            lines[i] = '~~~' + tildeMatch[2];
+        }
+    }
+
+    return lines.join('\n');
+}
+
+export function removeEmptyCodeBlocks(content: string): string {
+    const lines = content.split('\n');
+    const blockRanges: { start: number; end: number }[] = [];
+
+    let i = 0;
+    while (i < lines.length) {
+        const line = lines[i];
+
+        const openMatch = line.match(/^(```|~~~)/);
+
+        if (openMatch) {
+            const fenceChar = openMatch[1][0];
+            let j = i + 1;
+            let hasContent = false;
+            let closingIndex = -1;
+
+            while (j < lines.length) {
+                const checkLine = lines[j];
+
+                const closeMatch = checkLine.match(new RegExp(`^${fenceChar}{3,}\\s*$`));
+
+                if (closeMatch) {
+                    closingIndex = j;
+                    break;
+                }
+
+                if (checkLine.trim().length > 0) {
+                    hasContent = true;
+                }
+
+                j++;
+            }
+
+            if (closingIndex !== -1 && !hasContent) {
+                blockRanges.push({ start: i, end: closingIndex });
+                i = closingIndex + 1;
+                continue;
+            }
+        }
+
+        i++;
+    }
+
+    for (let idx = blockRanges.length - 1; idx >= 0; idx--) {
+        const range = blockRanges[idx];
+        lines.splice(range.start, range.end - range.start + 1);
+    }
+
+    return lines.join('\n');
+}
+
 export function fixMD040Violations(content: string, lintResult: any, defaultLanguage: string): string {
     if (!lintResult || !Array.isArray(lintResult)) {
         return content;
@@ -290,6 +362,8 @@ export async function fixLintIssuesWithMarkdownlint(content: string, lintResult:
             let fixedContent = applyFixes(content, lintResult);
 
             fixedContent = fixMD040Violations(fixedContent, lintResult, defaultLanguage);
+            fixedContent = fixOversizedFenceMarkers(fixedContent);
+            fixedContent = removeEmptyCodeBlocks(fixedContent);
 
             return fixedContent;
         }
