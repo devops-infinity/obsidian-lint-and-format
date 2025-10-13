@@ -7,6 +7,7 @@ import { formatMarkdown } from './utils/formatter';
 import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from './utils/markdownlintAdapter';
 import { LintResultsModal } from './components/LintResultsModal';
 import { registerHeroicons } from './utils/heroicons';
+import { COMPREHENSIVE_LANGUAGES, LANGUAGE_DROPDOWN_OPTIONS } from './utils/codeLanguages';
 import manifest from '../manifest.json';
 
 export default class LintAndFormatPlugin extends Plugin {
@@ -78,11 +79,33 @@ export default class LintAndFormatPlugin extends Plugin {
 
                 this.updateLintStatus(result);
 
-                new LintResultsModalWrapper(this.app, result, () => {
-                    const fixed = fixLintIssues(content, result.issues);
+                new LintResultsModalWrapper(this.app, result, async () => {
+                    const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
                     editor.setValue(fixed);
-                    new Notice('Fixed all auto-fixable issues!');
-                    this.updateLintStatus(null);
+
+                    const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+                    this.updateLintStatus(recheckResult);
+
+                    if (recheckResult.totalIssues === 0) {
+                        new Notice('All issues fixed successfully!');
+                    } else {
+                        new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
+                        setTimeout(() => {
+                            new LintResultsModalWrapper(this.app, recheckResult, async () => {
+                                const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
+                                editor.setValue(refixed);
+
+                                const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                                this.updateLintStatus(finalResult);
+
+                                if (finalResult.totalIssues === 0) {
+                                    new Notice('All issues fixed successfully!');
+                                } else {
+                                    new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
+                                }
+                            }).open();
+                        }, 100);
+                    }
                 }).open();
 
                 if (this.settings.showLintErrors && result.totalIssues > 0) {
@@ -119,7 +142,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     return;
                 }
 
-                const fixed = fixLintIssues(content, result.issues);
+                const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
                 editor.setValue(fixed);
                 new Notice(`Fixed ${fixableCount} issue(s)!`);
 
@@ -158,11 +181,33 @@ export default class LintAndFormatPlugin extends Plugin {
                     this.updateLintStatus(lintResult);
 
                     if (lintResult.totalIssues > 0) {
-                        new LintResultsModalWrapper(this.app, lintResult, () => {
-                            const fixed = fixLintIssues(currentContent, lintResult.issues);
+                        new LintResultsModalWrapper(this.app, lintResult, async () => {
+                            const fixed = await fixLintIssues(currentContent, lintResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
                             editor.setValue(fixed);
-                            new Notice('Fixed all auto-fixable issues!');
-                            this.updateLintStatus(null);
+
+                            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+                            this.updateLintStatus(recheckResult);
+
+                            if (recheckResult.totalIssues === 0) {
+                                new Notice('All issues fixed successfully!');
+                            } else {
+                                new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
+                                setTimeout(() => {
+                                    new LintResultsModalWrapper(this.app, recheckResult, async () => {
+                                        const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
+                                        editor.setValue(refixed);
+
+                                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                                        this.updateLintStatus(finalResult);
+
+                                        if (finalResult.totalIssues === 0) {
+                                            new Notice('All issues fixed successfully!');
+                                        } else {
+                                            new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
+                                        }
+                                    }).open();
+                                }, 100);
+                            }
                         }).open();
                     } else {
                         new Notice('Document formatted and no lint issues found!');
@@ -243,11 +288,33 @@ export default class LintAndFormatPlugin extends Plugin {
             return;
         }
 
-        new LintResultsModalWrapper(this.app, result, () => {
-            const fixed = fixLintIssues(content, result.issues);
+        new LintResultsModalWrapper(this.app, result, async () => {
+            const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
             view.editor.setValue(fixed);
-            new Notice('Fixed all auto-fixable issues!');
-            this.updateLintStatus(null);
+
+            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules);
+            this.updateLintStatus(recheckResult);
+
+            if (recheckResult.totalIssues === 0) {
+                new Notice('All issues fixed successfully!');
+            } else {
+                new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
+                setTimeout(() => {
+                    new LintResultsModalWrapper(this.app, recheckResult, async () => {
+                        const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
+                        view.editor.setValue(refixed);
+
+                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules);
+                        this.updateLintStatus(finalResult);
+
+                        if (finalResult.totalIssues === 0) {
+                            new Notice('All issues fixed successfully!');
+                        } else {
+                            new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
+                        }
+                    }).open();
+                }, 100);
+            }
         }).open();
     }
 
@@ -356,9 +423,9 @@ export default class LintAndFormatPlugin extends Plugin {
 class LintResultsModalWrapper extends Modal {
     private root: ReactDOM.Root | null = null;
     private result: LintResult;
-    private onFix: () => void;
+    private onFix: () => void | Promise<void>;
 
-    constructor(app: App, result: LintResult, onFix: () => void) {
+    constructor(app: App, result: LintResult, onFix: () => void | Promise<void>) {
         super(app);
         this.result = result;
         this.onFix = onFix;
@@ -372,8 +439,8 @@ class LintResultsModalWrapper extends Modal {
         this.root.render(
             React.createElement(LintResultsModal, {
                 result: this.result,
-                onFix: () => {
-                    this.onFix();
+                onFix: async () => {
+                    await this.onFix();
                     this.close();
                 },
             })
@@ -656,6 +723,46 @@ class LintAndFormatSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.lintRules.strongMarker = value as any;
                         await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Default code block language')
+            .setDesc('Default language for fenced code blocks without language specified (for MD040 auto-fix). Comprehensive list of 200+ languages based on GitHub Linguist, highlight.js, and Prism.js.')
+            .addDropdown((dropdown) => {
+                LANGUAGE_DROPDOWN_OPTIONS.forEach(option => {
+                    dropdown.addOption(option.value, option.label);
+                });
+
+                const currentValue = this.plugin.settings.lintRules.defaultCodeLanguage;
+                if (COMPREHENSIVE_LANGUAGES.includes(currentValue)) {
+                    dropdown.setValue(currentValue);
+                } else {
+                    dropdown.setValue('custom');
+                }
+
+                dropdown.onChange(async (value) => {
+                    if (value !== 'custom' && value !== '') {
+                        this.plugin.settings.lintRules.defaultCodeLanguage = value;
+                        await this.plugin.saveSettings();
+                    }
+                });
+
+                return dropdown;
+            })
+            .addText((text) =>
+                text
+                    .setPlaceholder('Enter any language identifier (e.g., ebnf, fift, wgsl)')
+                    .setValue(
+                        COMPREHENSIVE_LANGUAGES.includes(this.plugin.settings.lintRules.defaultCodeLanguage)
+                            ? ''
+                            : this.plugin.settings.lintRules.defaultCodeLanguage
+                    )
+                    .onChange(async (value) => {
+                        if (value.trim()) {
+                            this.plugin.settings.lintRules.defaultCodeLanguage = value.trim().toLowerCase();
+                            await this.plugin.saveSettings();
+                        }
                     })
             );
 

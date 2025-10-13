@@ -5,7 +5,7 @@ import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/
 
 interface LintResultsModalProps {
     result: LintResult;
-    onFix: () => void;
+    onFix: () => void | Promise<void>;
 }
 
 export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFix }) => {

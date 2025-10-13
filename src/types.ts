@@ -8,6 +8,7 @@ export interface LintIssue {
     rule: string;
     fixable: boolean;
     fixInfo?: any;
+    rawResult?: any;
 }
 
 export interface LintResult {
@@ -16,6 +17,7 @@ export interface LintResult {
     errorCount: number;
     warningCount: number;
     infoCount: number;
+    rawResult?: any;
 }
 
 export interface FormatResult {
@@ -43,4 +45,5 @@ export interface LintRules {
     listItemIndent: 'space' | 'tab' | 'mixed';
     emphasisMarker: '*' | '_' | 'consistent';
     strongMarker: '**' | '__' | 'consistent';
+    defaultCodeLanguage: string;
 }

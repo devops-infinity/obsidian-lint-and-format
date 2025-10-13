@@ -1,13 +1,71 @@
 import type { LintIssue, LintResult, LintRules } from '../types';
 
+/**
+ * Markdownlint Rules Configuration
+ *
+ * Complete list of markdownlint rules (MD001-MD059):
+ *
+ * MD001 - heading-increment: Heading levels should only increment by one level at a time
+ * MD003 - heading-style: Heading style consistency (atx, atx_closed, setext)
+ * MD004 - ul-style: Unordered list style consistency
+ * MD005 - list-indent: Inconsistent indentation for list items at the same level
+ * MD007 - ul-indent: Unordered list indentation
+ * MD009 - no-trailing-spaces: Trailing spaces
+ * MD010 - no-hard-tabs: Hard tabs
+ * MD011 - no-reversed-links: Reversed link syntax
+ * MD012 - no-multiple-blanks: Multiple consecutive blank lines
+ * MD013 - line-length: Line length limit
+ * MD014 - commands-show-output: Dollar signs before commands without output
+ * MD018 - no-missing-space-atx: No space after hash on atx style heading
+ * MD019 - no-multiple-space-atx: Multiple spaces after hash on atx style heading
+ * MD020 - no-missing-space-closed-atx: No space inside hashes on closed atx style heading
+ * MD021 - no-multiple-space-closed-atx: Multiple spaces inside hashes on closed atx style heading
+ * MD022 - blanks-around-headings: Headings should be surrounded by blank lines
+ * MD023 - heading-start-left: Headings must start at the beginning of the line
+ * MD024 - no-duplicate-heading: Multiple headings with the same content
+ * MD025 - single-h1: Multiple top-level headings in the same document
+ * MD026 - no-trailing-punctuation: Trailing punctuation in heading
+ * MD027 - no-multiple-space-blockquote: Multiple spaces after blockquote symbol
+ * MD028 - no-blanks-blockquote: Blank line inside blockquote
+ * MD029 - ol-prefix: Ordered list item prefix
+ * MD030 - list-marker-space: Spaces after list markers
+ * MD031 - blanks-around-fences: Fenced code blocks should be surrounded by blank lines
+ * MD032 - blanks-around-lists: Lists should be surrounded by blank lines
+ * MD033 - no-inline-html: Inline HTML
+ * MD034 - no-bare-urls: Bare URL used
+ * MD035 - hr-style: Horizontal rule style
+ * MD036 - no-emphasis-as-heading: Emphasis used instead of a heading
+ * MD037 - no-space-in-emphasis: Spaces inside emphasis markers
+ * MD038 - no-space-in-code: Spaces inside code span elements
+ * MD039 - no-space-in-links: Spaces inside link text
+ * MD040 - fenced-code-language: Fenced code blocks should have a language specified
+ * MD041 - first-line-h1: First line in a file should be a top-level heading
+ * MD042 - no-empty-links: No empty links
+ * MD043 - required-headings: Required heading structure
+ * MD044 - proper-names: Proper names should have correct capitalization
+ * MD045 - no-alt-text: Images should have alternate text (alt text)
+ * MD046 - code-block-style: Code block style
+ * MD047 - single-trailing-newline: Files should end with a single newline character
+ * MD048 - code-fence-style: Code fence style
+ * MD049 - emphasis-style: Emphasis style
+ * MD050 - strong-style: Strong style
+ * MD051 - link-fragments: Link fragments should be valid
+ * MD052 - reference-links-images: Reference links and images should use a label that is defined
+ * MD053 - link-image-reference-definitions: Link and image reference definitions should be needed
+ * MD054 - link-image-style: Link and image style
+ * MD055 - table-pipe-style: Table pipe style
+ * MD056 - table-column-count: Table column count consistency
+ * MD058 - blanks-around-tables: Tables should be surrounded by blank lines
+ * MD059 - descriptive-link-text: Link text should be descriptive and not generic
+ *
+ * Note: MD002, MD006, MD008, MD015-MD017, MD057 are not defined in the current markdownlint version
+ */
 export interface MarkdownlintConfig {
     default?: boolean;
     MD001?: boolean | { level?: number };
-    MD002?: boolean | { level?: number };
     MD003?: boolean | { style?: 'consistent' | 'atx' | 'atx_closed' | 'setext' };
     MD004?: boolean | { style?: 'consistent' | 'asterisk' | 'plus' | 'dash' | 'sublist' };
     MD005?: boolean;
-    MD006?: boolean | { start_indented?: boolean };
     MD007?: boolean | { indent?: number };
     MD009?: boolean | { br_spaces?: number; list_item_empty_lines?: boolean; strict?: boolean };
     MD010?: boolean | { code_blocks?: boolean };
@@ -48,13 +106,20 @@ export interface MarkdownlintConfig {
     MD048?: boolean | { style?: 'consistent' | 'tilde' | 'backtick' };
     MD049?: boolean | { style?: 'consistent' | 'asterisk' | 'underscore' };
     MD050?: boolean | { style?: 'consistent' | 'asterisk' | 'underscore' };
+    MD051?: boolean;
+    MD052?: boolean | { shortcut_syntax?: boolean };
+    MD053?: boolean | { ignored_definitions?: string[]; shortcut_syntax?: boolean };
+    MD054?: boolean | { autolink?: boolean; inline?: boolean; full?: boolean; collapsed?: boolean; shortcut?: boolean; url_inline?: boolean };
+    MD055?: boolean | { style?: 'consistent' | 'leading_only' | 'trailing_only' | 'leading_and_trailing' | 'no_leading_or_trailing' };
+    MD056?: boolean;
+    MD058?: boolean;
+    MD059?: boolean | { link_texts?: string[] };
 }
 
 export function mapLintRulesToMarkdownlintConfig(rules: LintRules): MarkdownlintConfig {
     const config: MarkdownlintConfig = {
         default: true,
         MD001: true,
-        MD002: { level: 1 },
         MD003: { style: rules.headingStyle === 'consistent' ? 'consistent' : rules.headingStyle },
         MD004: { style: 'asterisk' },
         MD005: true,
@@ -98,13 +163,22 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules): Markdownlint
         MD040: { allowed_languages: [] },
         MD041: false,
         MD042: true,
+        MD043: false,
         MD044: false,
         MD045: true,
         MD046: { style: 'fenced' },
         MD047: true,
         MD048: { style: 'backtick' },
         MD049: { style: rules.emphasisMarker === 'consistent' ? 'consistent' : (rules.emphasisMarker === '*' ? 'asterisk' : 'underscore') },
-        MD050: { style: rules.strongMarker === '__' ? 'underscore' : 'asterisk' }
+        MD050: { style: rules.strongMarker === '__' ? 'underscore' : 'asterisk' },
+        MD051: true,
+        MD052: false,
+        MD053: true,
+        MD054: { autolink: true, inline: true, full: true, collapsed: true, shortcut: true, url_inline: true },
+        MD055: { style: 'consistent' },
+        MD056: true,
+        MD058: true,
+        MD059: true
     };
 
     if (rules.noTrailingSpaces === false) {
@@ -137,7 +211,7 @@ export async function lintMarkdownWithMarkdownlint(
                 const lineNumber = error.lineNumber;
 
                 let severity: 'error' | 'warning' | 'info' = 'warning';
-                if (error.ruleNames[0] === 'MD001' || error.ruleNames[0] === 'MD002') {
+                if (error.ruleNames[0] === 'MD001') {
                     severity = 'error';
                 } else if (error.ruleNames[0] === 'MD013' || error.ruleNames[0] === 'MD022') {
                     severity = 'info';
@@ -166,10 +240,10 @@ export async function lintMarkdownWithMarkdownlint(
             totalIssues: issues.length,
             errorCount,
             warningCount,
-            infoCount
+            infoCount,
+            rawResult: result['content.md']
         };
     } catch (error) {
-        console.error('Markdownlint wrapper error:', error);
         return {
             issues: [],
             totalIssues: 0,
@@ -180,42 +254,48 @@ export async function lintMarkdownWithMarkdownlint(
     }
 }
 
-export function fixLintIssuesWithMarkdownlint(content: string, issues: LintIssue[]): string {
-    const lines = content.split('\n');
-    const fixableIssues = issues
-        .filter((issue) => issue.fixable && issue.fixInfo)
-        .sort((a, b) => b.line - a.line);
+export function fixMD040Violations(content: string, lintResult: any, defaultLanguage: string): string {
+    if (!lintResult || !Array.isArray(lintResult)) {
+        return content;
+    }
 
-    for (const issue of fixableIssues) {
-        const lineIndex = issue.line - 1;
+    const md040Errors = lintResult.filter((error: any) => error.ruleNames && error.ruleNames.includes('MD040'));
+
+    if (md040Errors.length === 0) {
+        return content;
+    }
+
+    const lines = content.split('\n');
+
+    for (const error of md040Errors.reverse()) {
+        const lineIndex = error.lineNumber - 1;
         if (lineIndex < 0 || lineIndex >= lines.length) continue;
 
-        const fixInfo = issue.fixInfo as any;
-        if (fixInfo) {
-            if (fixInfo.editColumn !== undefined) {
-                const line = lines[lineIndex];
-                if (fixInfo.deleteCount !== undefined) {
-                    lines[lineIndex] =
-                        line.substring(0, fixInfo.editColumn - 1) +
-                        (fixInfo.insertText || '') +
-                        line.substring(fixInfo.editColumn - 1 + fixInfo.deleteCount);
-                } else if (fixInfo.insertText) {
-                    lines[lineIndex] =
-                        line.substring(0, fixInfo.editColumn - 1) +
-                        fixInfo.insertText +
-                        line.substring(fixInfo.editColumn - 1);
-                }
-            } else if (fixInfo.lineNumber !== undefined) {
-                if (fixInfo.deleteCount !== undefined && fixInfo.deleteCount > 0) {
-                    lines.splice(fixInfo.lineNumber - 1, fixInfo.deleteCount);
-                }
-                if (fixInfo.insertText) {
-                    const insertLines = fixInfo.insertText.split('\n');
-                    lines.splice(fixInfo.lineNumber - 1, 0, ...insertLines);
-                }
-            }
+        const line = lines[lineIndex];
+        if (line.match(/^```\s*$/)) {
+            lines[lineIndex] = '```' + defaultLanguage;
+        } else if (line.match(/^~~~\s*$/)) {
+            lines[lineIndex] = '~~~' + defaultLanguage;
         }
     }
 
     return lines.join('\n');
+}
+
+export async function fixLintIssuesWithMarkdownlint(content: string, lintResult: any, defaultLanguage: string = 'text'): Promise<string> {
+    try {
+        const { applyFixes } = await import('markdownlint');
+
+        if (lintResult && Array.isArray(lintResult)) {
+            let fixedContent = applyFixes(content, lintResult);
+
+            fixedContent = fixMD040Violations(fixedContent, lintResult, defaultLanguage);
+
+            return fixedContent;
+        }
+
+        return content;
+    } catch (error) {
+        return content;
+    }
 }

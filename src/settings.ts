@@ -17,5 +17,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         listItemIndent: 'space',
         emphasisMarker: '*',
         strongMarker: '**',
+        defaultCodeLanguage: 'text',
     },
 };
