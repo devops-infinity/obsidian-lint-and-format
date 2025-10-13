@@ -7,6 +7,7 @@ export interface LintIssue {
     message: string;
     rule: string;
     fixable: boolean;
+    fixInfo?: any;
 }
 
 export interface LintResult {

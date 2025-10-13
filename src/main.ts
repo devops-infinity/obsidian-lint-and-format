@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import type { PluginSettings, LintResult } from './types';
 import { DEFAULT_SETTINGS } from './settings';
 import { formatMarkdown } from './utils/formatter';
-import { lintMarkdown, fixLintIssues } from './utils/linter';
+import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from './utils/markdownlintAdapter';
 import { LintResultsModal } from './components/LintResultsModal';
 import { registerHeroicons } from './utils/heroicons';
 import manifest from '../manifest.json';
