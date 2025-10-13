@@ -39,8 +39,8 @@ export async function lintMarkdown(
             issues.push({
                 line: lineNumber,
                 column: rules.maxLineLength,
-                severity: 'warning',
-                message: `Line exceeds maximum length of ${rules.maxLineLength} characters`,
+                severity: 'info',
+                message: `Line exceeds maximum length of ${rules.maxLineLength} characters (current: ${line.length})`,
                 rule: 'max-line-length',
                 fixable: false,
             });
@@ -99,7 +99,9 @@ export async function lintMarkdown(
 
 export function fixLintIssues(content: string, issues: LintIssue[]): string {
     const lines = content.split('\n');
-    const fixableIssues = issues.filter((issue) => issue.fixable);
+    const fixableIssues = issues
+        .filter((issue) => issue.fixable)
+        .sort((a, b) => b.line - a.line);
 
     for (const issue of fixableIssues) {
         const lineIndex = issue.line - 1;

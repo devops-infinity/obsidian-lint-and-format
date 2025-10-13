@@ -1,4 +1,5 @@
 import * as prettier from 'prettier';
+import * as prettierPluginMarkdown from 'prettier/plugins/markdown';
 import type { PrettierMarkdownConfig } from './prettierConfig';
 import type { FormatResult } from '../types';
 
@@ -7,7 +8,11 @@ export async function formatMarkdown(
     config: PrettierMarkdownConfig
 ): Promise<FormatResult> {
     try {
-        const formatted = await prettier.format(content, config);
+        const formatted = await prettier.format(content, {
+            ...config,
+            parser: 'markdown',
+            plugins: [prettierPluginMarkdown],
+        });
 
         return {
             formatted: formatted !== content,
@@ -27,7 +32,11 @@ export async function checkFormatting(
     config: PrettierMarkdownConfig
 ): Promise<boolean> {
     try {
-        return await prettier.check(content, config);
+        return await prettier.check(content, {
+            ...config,
+            parser: 'markdown',
+            plugins: [prettierPluginMarkdown],
+        });
     } catch (error) {
         return false;
     }

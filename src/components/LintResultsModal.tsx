@@ -5,11 +5,10 @@ import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/
 
 interface LintResultsModalProps {
     result: LintResult;
-    onClose: () => void;
     onFix: () => void;
 }
 
-export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onClose, onFix }) => {
+export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFix }) => {
     const getSeverityColor = (severity: string) => {
         switch (severity) {
             case 'error':
@@ -42,15 +41,9 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onCl
 
     return (
         <div style={createStyles.container()}>
-            <div style={createStyles.header()}>
-                <h2 style={{ margin: 0 }}>Lint Results</h2>
-                <button onClick={onClose} style={createStyles.button('secondary')}>
-                    Close
-                </button>
-            </div>
-
             <div style={{
                 ...createStyles.infoBox(),
+                marginTop: 0,
                 marginBottom: spacing.lg,
             }}>
                 <div style={createStyles.flexRow(spacing.lg)}>

@@ -56,7 +56,7 @@ export const layout = {
 
 export const createStyles = {
     container: (height: string = layout.maxHeight): CSSProperties => ({
-        padding: spacing.lg,
+        padding: `${spacing.sm} ${spacing.lg} ${spacing.lg} ${spacing.lg}`,
         fontFamily: 'var(--font-interface)',
         maxHeight: height,
         overflowY: 'auto',
