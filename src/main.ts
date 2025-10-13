@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, setIcon } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, setIcon } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import type { PluginSettings, LintResult } from './types';
@@ -220,16 +220,43 @@ export default class LintAndFormatPlugin extends Plugin {
 
         if (this.settings.formatOnSave) {
             this.registerEvent(
-                this.app.workspace.on('editor-change', async (editor: Editor) => {
+                this.app.vault.on('modify', async (file) => {
+                    if (!(file instanceof TFile)) {
+                        return;
+                    }
+
                     if (this.settings.formatOnSave && this.settings.enableAutoFormat) {
-                        const content = editor.getValue();
+                        if (!file.path.endsWith('.md') && !file.path.endsWith('.markdown')) {
+                            return;
+                        }
+
+                        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                        if (!view || view.file?.path !== file.path) {
+                            return;
+                        }
+
+                        const editor = view.editor;
+                        const cursor = editor.getCursor();
+                        const scrollInfo = editor.getScrollInfo();
+
+                        const content = await this.app.vault.read(file);
                         const result = await formatMarkdown(content, this.settings.prettierConfig);
 
                         if (!result.error && result.formatted) {
-                            const cursor = editor.getCursor();
-                            editor.setValue(result.content);
-                            editor.setCursor(cursor);
-                            this.updateFormatStatus('success');
+                            const selections = editor.listSelections();
+
+                            await this.app.vault.modify(file, result.content);
+
+                            setTimeout(() => {
+                                editor.setCursor(cursor);
+                                editor.scrollTo(scrollInfo.left, scrollInfo.top);
+
+                                if (selections && selections.length > 0) {
+                                    editor.setSelections(selections);
+                                }
+
+                                this.updateFormatStatus('success');
+                            }, 0);
                         } else if (result.error) {
                             this.updateFormatStatus('error');
                         }
