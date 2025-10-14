@@ -36,6 +36,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         this.addGeneralSettings(containerEl);
         this.addFormatSettings(containerEl);
+        this.addPostProcessingFeatures(containerEl);
         this.addLintRulesStructure(containerEl);
         this.addLintRulesLists(containerEl);
         this.addLintRulesCodeBlocks(containerEl);
@@ -101,6 +102,111 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
                     this.plugin.settings.autoFixLintIssues = value;
                     await this.plugin.saveSettings();
                 })
+            );
+    }
+
+    private addPostProcessingFeatures(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('Markdown Post-Processing')
+            .setHeading();
+
+        containerEl.createEl('p', {
+            text: 'Advanced transformations applied after Prettier formatting: list normalization, code block formatting, table of contents generation, and blank line removal.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Fix list spacing')
+            .setDesc('Fix extra empty lines in ordered and unordered lists, ensure consistent spacing between list items')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.postProcessingConfig.enableListFormatting).onChange(async (value) => {
+                    this.plugin.settings.postProcessingConfig.enableListFormatting = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Trim lines in lists')
+            .setDesc('Remove unnecessary empty lines within list items for cleaner formatting')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.postProcessingConfig.enableLineTrimmingInLists).onChange(async (value) => {
+                    this.plugin.settings.postProcessingConfig.enableLineTrimmingInLists = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Remove extra blank lines')
+            .setDesc('Reduce multiple consecutive blank lines down to a maximum of one throughout the document')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.postProcessingConfig.removeDuplicateBlankLines).onChange(async (value) => {
+                    this.plugin.settings.postProcessingConfig.removeDuplicateBlankLines = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Format code in code blocks')
+            .setDesc('Automatically format code within fenced code blocks using Prettier (supports JavaScript, TypeScript, Python, JSON, YAML, CSS, HTML, Bash/Shell, and more)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.postProcessingConfig.enableCodeBlockFormatting).onChange(async (value) => {
+                    this.plugin.settings.postProcessingConfig.enableCodeBlockFormatting = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Code block languages to format')
+            .setDesc('Comma-separated list of programming languages to format in code blocks (e.g., javascript,python,json,yaml,css,bash,shell,typescript,html,scss)')
+            .addText((text) =>
+                text
+                    .setPlaceholder('javascript,python,json,yaml,css,bash')
+                    .setValue(this.plugin.settings.postProcessingConfig.codeBlockLanguages.join(','))
+                    .onChange(async (value) => {
+                        const languages = value.split(',').map(lang => lang.trim().toLowerCase()).filter(lang => lang);
+                        this.plugin.settings.postProcessingConfig.codeBlockLanguages = languages;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Generate table of contents')
+            .setDesc('Automatically generate or update a table of contents based on document headings')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.postProcessingConfig.enableTocGeneration).onChange(async (value) => {
+                    this.plugin.settings.postProcessingConfig.enableTocGeneration = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Table of contents depth')
+            .setDesc('Maximum heading level to include in the table of contents (1-6, where 1 is H1, 6 is H6)')
+            .addText((text) =>
+                text
+                    .setPlaceholder('3')
+                    .setValue(String(this.plugin.settings.postProcessingConfig.tocDepth))
+                    .onChange(async (value) => {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 1 && num <= 6) {
+                            this.plugin.settings.postProcessingConfig.tocDepth = num;
+                            await this.plugin.saveSettings();
+                        }
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Table of contents position')
+            .setDesc('Choose where to place the generated table of contents in your document')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('after-frontmatter', 'After YAML front matter')
+                    .addOption('top', 'Top of document')
+                    .setValue(this.plugin.settings.postProcessingConfig.tocPosition)
+                    .onChange(async (value) => {
+                        this.plugin.settings.postProcessingConfig.tocPosition = value as any;
+                        await this.plugin.saveSettings();
+                    })
             );
     }
 

@@ -26,6 +26,17 @@ export interface FormatResult {
     error?: string;
 }
 
+export interface MarkdownPostProcessingConfig {
+    enableListFormatting: boolean;
+    enableLineTrimmingInLists: boolean;
+    enableCodeBlockFormatting: boolean;
+    enableTocGeneration: boolean;
+    tocDepth: number;
+    tocPosition: 'top' | 'after-frontmatter';
+    codeBlockLanguages: string[];
+    removeDuplicateBlankLines: boolean;
+}
+
 export interface PluginSettings {
     enableAutoFormat: boolean;
     enableLinting: boolean;
@@ -34,6 +45,7 @@ export interface PluginSettings {
     autoFixLintIssues: boolean;
     prettierConfig: PrettierMarkdownConfig;
     lintRules: LintRules;
+    postProcessingConfig: MarkdownPostProcessingConfig;
 }
 
 export interface LintRules {

@@ -24,7 +24,13 @@
 	"dependencies": {
 		"@heroicons/react": "^2.2.0",
 		"markdownlint": "^0.38.0",
-		"prettier": "^3.6.2"
+		"prettier": "^3.6.2",
+		"remark": "^15.0.1",
+		"remark-gfm": "^4.0.1",
+		"remark-stringify": "^11.0.0",
+		"remark-toc": "^9.0.0",
+		"unified": "^11.0.5",
+		"unist-util-visit": "^5.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.7.2",

@@ -46,7 +46,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const content = editor.getValue();
-                const result = await formatMarkdown(content, this.settings.prettierConfig);
+                const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
                 if (result.error) {
                     new Notice(`Formatting error: ${result.error}`);
@@ -138,7 +138,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 let formattedContent = content;
 
                 if (this.settings.enableAutoFormat) {
-                    const formatResult = await formatMarkdown(content, this.settings.prettierConfig);
+                    const formatResult = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
                     if (formatResult.error) {
                         new Notice(`Formatting error: ${formatResult.error}`);
@@ -238,7 +238,7 @@ export default class LintAndFormatPlugin extends Plugin {
                         const scrollInfo = editor.getScrollInfo();
 
                         const content = await this.app.vault.read(file);
-                        const result = await formatMarkdown(content, this.settings.prettierConfig);
+                        const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
                         if (!result.error && result.formatted) {
                             const selections = editor.listSelections();
@@ -343,7 +343,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         const content = view.editor.getValue();
-        const result = await formatMarkdown(content, this.settings.prettierConfig);
+        const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
         if (result.error) {
             new Notice(`Formatting error: ${result.error}`);

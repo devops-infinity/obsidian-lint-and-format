@@ -8,6 +8,16 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showLintErrors: true,
     autoFixLintIssues: true,
     prettierConfig: DEFAULT_PRETTIER_CONFIG,
+    postProcessingConfig: {
+        enableListFormatting: true,
+        enableLineTrimmingInLists: true,
+        enableCodeBlockFormatting: true,
+        enableTocGeneration: false,
+        tocDepth: 3,
+        tocPosition: 'after-frontmatter',
+        codeBlockLanguages: ['javascript', 'typescript', 'python', 'bash', 'shell', 'json', 'yaml', 'css', 'scss', 'html'],
+        removeDuplicateBlankLines: true,
+    },
     lintRules: {
         noTrailingSpaces: true,
         noMultipleBlankLines: true,
