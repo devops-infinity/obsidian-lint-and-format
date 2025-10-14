@@ -1,42 +1,13 @@
-import React from 'react';
-import { CheckCircleIcon, XCircleIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import type { LintResult } from '../types';
 import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/designTokens';
+import { getSeverityColor, getSeverityIcon, getSuccessIcon } from '../utils/severityHelpers';
 
 interface LintResultsModalProps {
     result: LintResult;
     onFix: () => void | Promise<void>;
 }
 
-export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFix }) => {
-    const getSeverityColor = (severity: string) => {
-        switch (severity) {
-            case 'error':
-                return colors.severity.error;
-            case 'warning':
-                return colors.severity.warning;
-            case 'info':
-                return colors.severity.info;
-            default:
-                return colors.text.muted;
-        }
-    };
-
-    const getSeverityIcon = (severity: string) => {
-        const iconProps = { style: { width: '18px', height: '18px', display: 'inline-block' } };
-
-        switch (severity) {
-            case 'error':
-                return <XCircleIcon {...iconProps} />;
-            case 'warning':
-                return <ExclamationCircleIcon {...iconProps} />;
-            case 'info':
-                return <InformationCircleIcon {...iconProps} />;
-            default:
-                return <span style={{ fontSize: '18px' }}>•</span>;
-        }
-    };
-
+export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
     const hasFixableIssues = result.issues.some((issue) => issue.fixable);
 
     return (
@@ -44,11 +15,17 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
             <div style={{
                 ...createStyles.infoBox(),
                 marginTop: 0,
-                marginBottom: spacing.lg,
+                marginBottom: spacing.sm,
+                padding: '8px 12px',
             }}>
-                <div style={createStyles.flexRow(spacing.lg)}>
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    fontSize: fontSize.sm,
+                }}>
                     <div>
-                        <strong>Total Issues:</strong> {result.totalIssues}
+                        <strong>Total:</strong> {result.totalIssues}
                     </div>
                     {result.errorCount > 0 && (
                         <div style={{ color: getSeverityColor('error') }}>
@@ -75,7 +52,7 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
                     color: colors.severity.success,
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.sm }}>
-                        <CheckCircleIcon style={{ width: '48px', height: '48px' }} />
+                        {getSuccessIcon()}
                     </div>
                     <h3>No issues found!</h3>
                     <p>Your document follows all configured linting rules.</p>
@@ -83,7 +60,7 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
             ) : (
                 <>
                     {hasFixableIssues && (
-                        <div style={{ marginBottom: spacing.md }}>
+                        <div style={{ marginBottom: spacing.sm }}>
                             <button
                                 onClick={onFix}
                                 style={{
@@ -92,6 +69,8 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
                                     color: 'var(--text-on-accent)',
                                     border: 'none',
                                     borderRadius: borderRadius.md,
+                                    padding: '6px 12px',
+                                    fontSize: fontSize.sm,
                                 }}
                             >
                                 Fix Autofixable Issues
@@ -99,44 +78,69 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
                         </div>
                     )}
 
-                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '450px', overflowY: 'auto' }}>
                         {result.issues.map((issue, index) => (
                             <div
                                 key={index}
                                 style={{
-                                    ...createStyles.issueItem(),
-                                    borderLeftColor: getSeverityColor(issue.severity),
+                                    padding: '8px 10px',
+                                    marginBottom: '6px',
+                                    backgroundColor: 'var(--background-secondary)',
+                                    borderLeft: `3px solid ${getSeverityColor(issue.severity)}`,
+                                    borderRadius: '4px',
+                                    fontSize: fontSize.sm,
                                 }}
                             >
-                                <div style={createStyles.flexRow(spacing.sm)}>
-                                    <div style={{ color: getSeverityColor(issue.severity) }}>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                    <div style={{
+                                        color: getSeverityColor(issue.severity),
+                                        flexShrink: 0,
+                                        marginTop: '2px',
+                                    }}>
                                         {getSeverityIcon(issue.severity)}
                                     </div>
-                                    <div style={{ flex: 1 }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{
-                                            ...createStyles.flexRow('8px'),
-                                            marginBottom: '4px',
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: '6px',
+                                            marginBottom: '3px',
                                             alignItems: 'center',
                                         }}>
                                             <span style={{
-                                                fontWeight: 'bold',
+                                                fontWeight: 600,
                                                 color: getSeverityColor(issue.severity),
+                                                fontSize: fontSize.sm,
                                             }}>
                                                 Line {issue.line}:{issue.column}
                                             </span>
                                             <span style={{
-                                                fontSize: fontSize.sm,
+                                                fontSize: '11px',
                                                 color: colors.text.muted,
+                                                fontFamily: 'var(--font-monospace)',
                                             }}>
-                                                [{issue.rule}]
+                                                {issue.rule}
                                             </span>
                                             {issue.fixable && (
-                                                <span style={createStyles.badge(colors.interactive.accent)}>
+                                                <span style={{
+                                                    fontSize: '10px',
+                                                    fontWeight: 600,
+                                                    color: 'var(--text-on-accent)',
+                                                    backgroundColor: colors.interactive.accent,
+                                                    padding: '1px 5px',
+                                                    borderRadius: '3px',
+                                                }}>
                                                     FIXABLE
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ color: colors.text.normal }}>{issue.message}</div>
+                                        <div style={{
+                                            color: colors.text.normal,
+                                            lineHeight: '1.4',
+                                            wordBreak: 'break-word',
+                                        }}>
+                                            {issue.message}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -146,4 +150,4 @@ export const LintResultsModal: React.FC<LintResultsModalProps> = ({ result, onFi
             )}
         </div>
     );
-};
+}

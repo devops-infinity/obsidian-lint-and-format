@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     enableLinting: true,
     formatOnSave: false,
     showLintErrors: true,
+    autoFixLintIssues: true,
     prettierConfig: DEFAULT_PRETTIER_CONFIG,
     lintRules: {
         noTrailingSpaces: true,
@@ -22,7 +23,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         noTrailingPunctuationInHeading: true,
         firstLineH1: false,
         unorderedListStyle: 'asterisk',
-        orderedListStyle: 'one_or_ordered',
+        orderedListStyle: 'ordered',
         listMarkerSpace: true,
         blankLinesAroundLists: true,
         blankLinesAroundFences: true,

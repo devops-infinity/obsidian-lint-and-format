@@ -31,6 +31,7 @@ export interface PluginSettings {
     enableLinting: boolean;
     formatOnSave: boolean;
     showLintErrors: boolean;
+    autoFixLintIssues: boolean;
     prettierConfig: PrettierMarkdownConfig;
     lintRules: LintRules;
 }

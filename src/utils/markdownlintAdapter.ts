@@ -233,11 +233,18 @@ export async function lintMarkdownWithMarkdownlint(
 
                 const fixable = error.fixInfo !== undefined && error.fixInfo !== null;
 
+                let message = error.ruleDescription;
+                if (error.errorDetail) {
+                    message += ` (${error.errorDetail})`;
+                } else if (error.errorContext) {
+                    message += ` - ${error.errorContext}`;
+                }
+
                 issues.push({
                     line: lineNumber,
                     column: error.errorRange ? error.errorRange[0] : 1,
                     severity,
-                    message: error.ruleDescription,
+                    message,
                     rule: error.ruleNames[0],
                     fixable,
                     fixInfo: error.fixInfo

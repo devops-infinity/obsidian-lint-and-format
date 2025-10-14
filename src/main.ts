@@ -1,14 +1,11 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, setIcon } from 'obsidian';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { Editor, MarkdownView, Notice, Plugin, TFile, setIcon } from 'obsidian';
 import type { PluginSettings, LintResult } from './types';
 import { DEFAULT_SETTINGS } from './settings';
 import { formatMarkdown } from './utils/formatter';
-import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from './utils/markdownlintAdapter';
-import { LintResultsModal } from './components/LintResultsModal';
 import { registerHeroicons } from './utils/heroicons';
-import { COMPREHENSIVE_LANGUAGES, LANGUAGE_DROPDOWN_OPTIONS } from './utils/codeLanguages';
-import manifest from '../manifest.json';
+import { LintResultsModalWrapper } from './components/LintResultsModalWrapper';
+import { LintAndFormatSettingTab } from './settings/LintAndFormatSettingTab';
+import { LintFixHandler } from './services/LintFixHandler';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
@@ -16,9 +13,12 @@ export default class LintAndFormatPlugin extends Plugin {
     private formatStatusEl: HTMLElement | null = null;
     private lastLintResult: LintResult | null = null;
     private lastFormatStatus: 'success' | 'error' | 'idle' = 'idle';
+    private lintFixHandler: LintFixHandler;
 
     async onload() {
         await this.loadSettings();
+
+        this.lintFixHandler = new LintFixHandler(this.settings.lintRules, this.settings.prettierConfig);
 
         registerHeroicons();
 
@@ -75,44 +75,26 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const content = editor.getValue();
-                const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
+                const result = await this.lintFixHandler.lintContent(content);
 
                 this.updateLintStatus(result);
+                this.lintFixHandler.showLintSummary(result, this.settings.showLintErrors);
 
                 new LintResultsModalWrapper(this.app, result, async () => {
-                    const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                    editor.setValue(fixed);
-
-                    const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
-                    this.updateLintStatus(recheckResult);
-
-                    if (recheckResult.totalIssues === 0) {
-                        new Notice('All issues fixed successfully!');
-                    } else {
-                        new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
-                        setTimeout(() => {
-                            new LintResultsModalWrapper(this.app, recheckResult, async () => {
-                                const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                                editor.setValue(refixed);
-
-                                const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
-                                this.updateLintStatus(finalResult);
-
-                                if (finalResult.totalIssues === 0) {
-                                    new Notice('All issues fixed successfully!');
-                                } else {
-                                    new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
-                                }
-                            }).open();
-                        }, 100);
-                    }
-                }).open();
-
-                if (this.settings.showLintErrors && result.totalIssues > 0) {
-                    new Notice(
-                        `Found ${result.totalIssues} issue(s): ${result.errorCount} error(s), ${result.warningCount} warning(s)`
+                    await this.lintFixHandler.recursiveFixWithCallback(
+                        content,
+                        result,
+                        editor,
+                        (finalResult) => {
+                            this.updateLintStatus(finalResult);
+                            if (finalResult.totalIssues > 0) {
+                                setTimeout(() => {
+                                    new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
+                                }, 100);
+                            }
+                        }
                     );
-                }
+                }).open();
             },
         });
 
@@ -126,7 +108,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const content = editor.getValue();
-                const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
+                const result = await this.lintFixHandler.lintContent(content);
 
                 this.updateLintStatus(result);
 
@@ -136,18 +118,15 @@ export default class LintAndFormatPlugin extends Plugin {
                     return;
                 }
 
-                const fixableCount = result.issues.filter((i) => i.fixable).length;
+                const fixableCount = this.lintFixHandler.getFixableCount(result);
                 if (fixableCount === 0) {
                     new Notice(`Found ${result.totalIssues} issue(s), but none are auto-fixable.`);
                     return;
                 }
 
-                const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                editor.setValue(fixed);
+                const { recheckResult } = await this.lintFixHandler.fixAndRecheck(content, result, editor);
                 new Notice(`Fixed ${fixableCount} issue(s)!`);
-
-                const resultAfterFix = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
-                this.updateLintStatus(resultAfterFix);
+                this.updateLintStatus(recheckResult);
             },
         });
 
@@ -177,54 +156,58 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 if (this.settings.enableLinting) {
-                    const lintResult = await lintMarkdown(formattedContent, this.settings.lintRules, this.settings.prettierConfig);
+                    if (this.settings.autoFixLintIssues) {
+                        const finalResult = await this.lintFixHandler.silentAutoFix(formattedContent, editor);
+                        this.updateLintStatus(finalResult);
 
-                    const fixableCount = lintResult.issues.filter((i) => i.fixable).length;
-
-                    if (fixableCount > 0) {
-                        const autoFixed = await fixLintIssues(formattedContent, lintResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                        editor.setValue(autoFixed);
-
-                        const recheckResult = await lintMarkdown(autoFixed, this.settings.lintRules, this.settings.prettierConfig);
-                        this.updateLintStatus(recheckResult);
-
-                        if (recheckResult.totalIssues === 0) {
-                            new Notice(`Document formatted and ${fixableCount} lint issue(s) auto-fixed!`);
+                        if (finalResult.totalIssues === 0) {
+                            new Notice('Document formatted and all lint issues auto-fixed!');
                         } else {
-                            new Notice(`Document formatted, ${fixableCount} issues fixed. ${recheckResult.totalIssues} issue(s) remaining.`);
-
-                            if (recheckResult.issues.filter((i) => i.fixable).length > 0) {
-                                setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, recheckResult, async () => {
-                                        const refixed = await fixLintIssues(autoFixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                                        editor.setValue(refixed);
-
-                                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
-                                        this.updateLintStatus(finalResult);
-
-                                        if (finalResult.totalIssues === 0) {
-                                            new Notice('All remaining issues fixed!');
-                                        } else {
-                                            new Notice(`${finalResult.totalIssues} issue(s) remaining (not auto-fixable).`);
-                                        }
-                                    }).open();
-                                }, 100);
-                            } else {
-                                setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, recheckResult, async () => {}).open();
-                                }, 100);
-                            }
+                            new Notice(`Document formatted and fixed. ${finalResult.totalIssues} issue(s) remaining (not auto-fixable).`);
                         }
                     } else {
-                        this.updateLintStatus(lintResult);
+                        const lintResult = await this.lintFixHandler.lintContent(formattedContent);
+                        const fixableCount = this.lintFixHandler.getFixableCount(lintResult);
 
-                        if (lintResult.totalIssues === 0) {
-                            new Notice('Document formatted and no lint issues found!');
+                        if (fixableCount > 0) {
+                            const { recheckResult } = await this.lintFixHandler.fixAndRecheck(formattedContent, lintResult, editor);
+                            this.updateLintStatus(recheckResult);
+
+                            if (recheckResult.totalIssues === 0) {
+                                new Notice(`Document formatted and ${fixableCount} lint issue(s) auto-fixed!`);
+                            } else {
+                                new Notice(`Document formatted, ${fixableCount} issues fixed. ${recheckResult.totalIssues} issue(s) remaining.`);
+
+                                if (this.lintFixHandler.getFixableCount(recheckResult) > 0) {
+                                    setTimeout(() => {
+                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {
+                                            await this.lintFixHandler.recursiveFixWithCallback(
+                                                editor.getValue(),
+                                                recheckResult,
+                                                editor,
+                                                (finalResult) => {
+                                                    this.updateLintStatus(finalResult);
+                                                }
+                                            );
+                                        }).open();
+                                    }, 100);
+                                } else {
+                                    setTimeout(() => {
+                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {}).open();
+                                    }, 100);
+                                }
+                            }
                         } else {
-                            new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
-                            setTimeout(() => {
-                                new LintResultsModalWrapper(this.app, lintResult, async () => {}).open();
-                            }, 100);
+                            this.updateLintStatus(lintResult);
+
+                            if (lintResult.totalIssues === 0) {
+                                new Notice('Document formatted and no lint issues found!');
+                            } else {
+                                new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
+                                setTimeout(() => {
+                                    new LintResultsModalWrapper(this.app, lintResult, async () => {}).open();
+                                }, 100);
+                            }
                         }
                     }
                 }
@@ -286,7 +269,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 if (view) {
                     const content = view.editor.getValue();
                     if (this.settings.enableLinting) {
-                        const lintResult = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
+                        const lintResult = await this.lintFixHandler.lintContent(content);
                         this.updateLintStatus(lintResult);
                     }
                     this.updateFormatStatus('idle');
@@ -321,7 +304,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         const content = view.editor.getValue();
-        const result = await lintMarkdown(content, this.settings.lintRules, this.settings.prettierConfig);
+        const result = await this.lintFixHandler.lintContent(content);
 
         this.updateLintStatus(result);
 
@@ -331,32 +314,19 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         new LintResultsModalWrapper(this.app, result, async () => {
-            const fixed = await fixLintIssues(content, result.rawResult, this.settings.lintRules.defaultCodeLanguage);
-            view.editor.setValue(fixed);
-
-            const recheckResult = await lintMarkdown(fixed, this.settings.lintRules, this.settings.prettierConfig);
-            this.updateLintStatus(recheckResult);
-
-            if (recheckResult.totalIssues === 0) {
-                new Notice('All issues fixed successfully!');
-            } else {
-                new Notice(`Fixed some issues. ${recheckResult.totalIssues} issue(s) remaining.`);
-                setTimeout(() => {
-                    new LintResultsModalWrapper(this.app, recheckResult, async () => {
-                        const refixed = await fixLintIssues(fixed, recheckResult.rawResult, this.settings.lintRules.defaultCodeLanguage);
-                        view.editor.setValue(refixed);
-
-                        const finalResult = await lintMarkdown(refixed, this.settings.lintRules, this.settings.prettierConfig);
-                        this.updateLintStatus(finalResult);
-
-                        if (finalResult.totalIssues === 0) {
-                            new Notice('All issues fixed successfully!');
-                        } else {
-                            new Notice(`${finalResult.totalIssues} issue(s) remaining.`);
-                        }
-                    }).open();
-                }, 100);
-            }
+            await this.lintFixHandler.recursiveFixWithCallback(
+                content,
+                result,
+                view.editor,
+                (finalResult) => {
+                    this.updateLintStatus(finalResult);
+                    if (finalResult.totalIssues > 0) {
+                        setTimeout(() => {
+                            new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
+                        }, 100);
+                    }
+                }
+            );
         }).open();
     }
 
@@ -459,625 +429,5 @@ export default class LintAndFormatPlugin extends Plugin {
                 this.formatStatusEl.style.cursor = 'pointer';
                 break;
         }
-    }
-}
-
-class LintResultsModalWrapper extends Modal {
-    private root: ReactDOM.Root | null = null;
-    private result: LintResult;
-    private onFix: () => void | Promise<void>;
-
-    constructor(app: App, result: LintResult, onFix: () => void | Promise<void>) {
-        super(app);
-        this.result = result;
-        this.onFix = onFix;
-        this.setTitle('Lint Results');
-    }
-
-    onOpen() {
-        const { contentEl } = this;
-
-        this.root = ReactDOM.createRoot(contentEl);
-        this.root.render(
-            React.createElement(LintResultsModal, {
-                result: this.result,
-                onFix: async () => {
-                    await this.onFix();
-                    this.close();
-                },
-            })
-        );
-    }
-
-    onClose() {
-        if (this.root) {
-            this.root.unmount();
-            this.root = null;
-        }
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
-
-class LintAndFormatSettingTab extends PluginSettingTab {
-    plugin: LintAndFormatPlugin;
-
-    constructor(app: App, plugin: LintAndFormatPlugin) {
-        super(app, plugin);
-        this.plugin = plugin;
-    }
-
-    display(): void {
-        const { containerEl } = this;
-
-        containerEl.empty();
-
-        containerEl.createEl('h2', { text: 'Lint & Format Settings' });
-
-        new Setting(containerEl)
-            .setName('Reset to Default Settings')
-            .setDesc('Restore all settings to factory defaults. This action cannot be undone.')
-            .addButton((button) =>
-                button
-                    .setButtonText('Reset All Settings')
-                    .setWarning()
-                    .onClick(async () => {
-                        const confirmed = await this.confirmReset();
-                        if (confirmed) {
-                            await this.resetToDefaults();
-                        }
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('General Settings')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Enable auto-formatting')
-            .setDesc('Allow the plugin to format documents using Prettier')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.enableAutoFormat).onChange(async (value) => {
-                    this.plugin.settings.enableAutoFormat = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.updateFormatStatus('idle');
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Enable linting')
-            .setDesc('Allow the plugin to analyze and report markdown style issues')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.enableLinting).onChange(async (value) => {
-                    this.plugin.settings.enableLinting = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.updateLintStatus(null);
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Format on save')
-            .setDesc('Automatically format documents when saving (requires reload)')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.formatOnSave).onChange(async (value) => {
-                    this.plugin.settings.formatOnSave = value;
-                    await this.plugin.saveSettings();
-                    new Notice('Please reload Obsidian for this change to take effect');
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Show lint errors')
-            .setDesc('Display notification messages for lint errors')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.showLintErrors).onChange(async (value) => {
-                    this.plugin.settings.showLintErrors = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Format Settings (Prettier)')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Print width')
-            .setDesc('Maximum line length before wrapping. Common values: 80 (default - Prettier standard), 100 (relaxed), 120 (wide). This setting also controls the linter\'s line length rule (MD013).')
-            .addText((text) =>
-                text
-                    .setPlaceholder('80')
-                    .setValue(String(this.plugin.settings.prettierConfig.printWidth))
-                    .onChange(async (value) => {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num > 0) {
-                            this.plugin.settings.prettierConfig.printWidth = num;
-                            await this.plugin.saveSettings();
-                        }
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Tab width')
-            .setDesc('Number of spaces per indentation level. This setting also controls list indentation in the linter (MD007).')
-            .addText((text) =>
-                text
-                    .setPlaceholder('2')
-                    .setValue(String(this.plugin.settings.prettierConfig.tabWidth))
-                    .onChange(async (value) => {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num > 0) {
-                            this.plugin.settings.prettierConfig.tabWidth = num;
-                            await this.plugin.saveSettings();
-                        }
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Use tabs')
-            .setDesc('Use tabs instead of spaces for indentation. This setting also controls hard tab detection in the linter (MD010).')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.prettierConfig.useTabs).onChange(async (value) => {
-                    this.plugin.settings.prettierConfig.useTabs = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Prose wrap')
-            .setDesc('How to wrap text: preserve (recommended for notes - respects your formatting), always (enforces print width), never (soft wrap only)')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('always', 'Always wrap')
-                    .addOption('never', 'Never wrap')
-                    .addOption('preserve', 'Preserve wrapping')
-                    .setValue(this.plugin.settings.prettierConfig.proseWrap)
-                    .onChange(async (value) => {
-                        this.plugin.settings.prettierConfig.proseWrap = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('End of line')
-            .setDesc('Line ending format for files')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('lf', 'LF (Unix/Mac)')
-                    .addOption('crlf', 'CRLF (Windows)')
-                    .addOption('cr', 'CR (Legacy Mac)')
-                    .addOption('auto', 'Auto')
-                    .setValue(this.plugin.settings.prettierConfig.endOfLine)
-                    .onChange(async (value) => {
-                        this.plugin.settings.prettierConfig.endOfLine = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Lint Rules: Structure')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Heading increment (MD001)')
-            .setDesc('Heading levels should only increment by one level at a time (e.g., # then ##, not # then ###)')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.headingIncrement).onChange(async (value) => {
-                    this.plugin.settings.lintRules.headingIncrement = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('No duplicate headings (MD024)')
-            .setDesc('Multiple headings with the same content are not allowed')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.noDuplicateHeadings).onChange(async (value) => {
-                    this.plugin.settings.lintRules.noDuplicateHeadings = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Single H1 (MD025)')
-            .setDesc('Only one top-level heading allowed per document')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.singleH1).onChange(async (value) => {
-                    this.plugin.settings.lintRules.singleH1 = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('No trailing punctuation in heading (MD026)')
-            .setDesc('Headings should not end with punctuation')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.noTrailingPunctuationInHeading).onChange(async (value) => {
-                    this.plugin.settings.lintRules.noTrailingPunctuationInHeading = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('First line H1 (MD041)')
-            .setDesc('First line in a file should be a top-level heading')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.firstLineH1).onChange(async (value) => {
-                    this.plugin.settings.lintRules.firstLineH1 = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Files end with newline (MD047)')
-            .setDesc('Files should end with a single newline character')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.filesEndWithNewline).onChange(async (value) => {
-                    this.plugin.settings.lintRules.filesEndWithNewline = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Lint Rules: Lists')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Unordered list style (MD004)')
-            .setDesc('Enforce consistent marker for unordered lists')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('asterisk', 'Asterisk (*)')
-                    .addOption('plus', 'Plus (+)')
-                    .addOption('dash', 'Dash (-)')
-                    .addOption('consistent', 'Consistent')
-                    .setValue(this.plugin.settings.lintRules.unorderedListStyle)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.unorderedListStyle = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Ordered list style (MD029)')
-            .setDesc('Ordered list item prefix style')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('one', 'All 1s (1. 1. 1.)')
-                    .addOption('ordered', 'Sequential (1. 2. 3.)')
-                    .addOption('one_or_ordered', 'One or Ordered')
-                    .setValue(this.plugin.settings.lintRules.orderedListStyle)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.orderedListStyle = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('List marker spacing (MD030)')
-            .setDesc('Spaces after list markers should be consistent')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.listMarkerSpace).onChange(async (value) => {
-                    this.plugin.settings.lintRules.listMarkerSpace = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Blank lines around lists (MD032)')
-            .setDesc('Lists should be surrounded by blank lines')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundLists).onChange(async (value) => {
-                    this.plugin.settings.lintRules.blankLinesAroundLists = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Lint Rules: Code Blocks')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Blank lines around code blocks (MD031)')
-            .setDesc('Fenced code blocks should be surrounded by blank lines')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundFences).onChange(async (value) => {
-                    this.plugin.settings.lintRules.blankLinesAroundFences = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Code block style (MD046)')
-            .setDesc('Preferred code block style')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('fenced', 'Fenced (```)')
-                    .addOption('indented', 'Indented (4 spaces)')
-                    .addOption('consistent', 'Consistent')
-                    .setValue(this.plugin.settings.lintRules.codeBlockStyle)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.codeBlockStyle = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Code fence style (MD048)')
-            .setDesc('Preferred code fence character')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('backtick', 'Backtick (```)')
-                    .addOption('tilde', 'Tilde (~~~)')
-                    .addOption('consistent', 'Consistent')
-                    .setValue(this.plugin.settings.lintRules.codeFenceStyle)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.codeFenceStyle = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Lint Rules: Links & Images')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('No bare URLs (MD034)')
-            .setDesc('Bare URLs should be enclosed in angle brackets or formatted as links')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.noBareUrls).onChange(async (value) => {
-                    this.plugin.settings.lintRules.noBareUrls = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Require image alt text (MD045)')
-            .setDesc('Images should have alternate text (alt text) for accessibility')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.noAltText).onChange(async (value) => {
-                    this.plugin.settings.lintRules.noAltText = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('Lint Rules: Spacing')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('No trailing spaces')
-            .setDesc('Warn about trailing spaces at the end of lines')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.lintRules.noTrailingSpaces).onChange(async (value) => {
-                    this.plugin.settings.lintRules.noTrailingSpaces = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
-            .setName('No multiple blank lines')
-            .setDesc('Warn about multiple consecutive blank lines')
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.lintRules.noMultipleBlankLines)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.noMultipleBlankLines = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Require blank line before heading')
-            .setDesc('Require a blank line before headings')
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.lintRules.requireBlankLineBeforeHeading)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.requireBlankLineBeforeHeading = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Require blank line after heading')
-            .setDesc('Require a blank line after headings')
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.lintRules.requireBlankLineAfterHeading)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.requireBlankLineAfterHeading = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Style Preferences')
-            .setHeading();
-
-        new Setting(containerEl)
-            .setName('Heading style')
-            .setDesc('Preferred markdown heading style')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('atx', 'ATX (# Heading)')
-                    .addOption('setext', 'Setext (Underline)')
-                    .addOption('consistent', 'Consistent')
-                    .setValue(this.plugin.settings.lintRules.headingStyle)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.headingStyle = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Emphasis marker')
-            .setDesc('Italic/emphasis text style (default: consistent - matches first occurrence). Options: * (asterisk), _ (underscore), or consistent.')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('consistent', 'Consistent (default)')
-                    .addOption('*', 'Asterisk (*)')
-                    .addOption('_', 'Underscore (_)')
-                    .setValue(this.plugin.settings.lintRules.emphasisMarker)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.emphasisMarker = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Strong marker')
-            .setDesc('Bold/strong text style (default: consistent - matches first occurrence). Options: ** (double asterisk), __ (double underscore), or consistent.')
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption('consistent', 'Consistent (default)')
-                    .addOption('**', 'Double Asterisk (**)')
-                    .addOption('__', 'Double Underscore (__)')
-                    .setValue(this.plugin.settings.lintRules.strongMarker)
-                    .onChange(async (value) => {
-                        this.plugin.settings.lintRules.strongMarker = value as any;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('Default code block language')
-            .setDesc('Default language for fenced code blocks without language specified (for MD040 auto-fix). Comprehensive list of 200+ languages based on GitHub Linguist, highlight.js, and Prism.js.')
-            .addDropdown((dropdown) => {
-                LANGUAGE_DROPDOWN_OPTIONS.forEach(option => {
-                    dropdown.addOption(option.value, option.label);
-                });
-
-                const currentValue = this.plugin.settings.lintRules.defaultCodeLanguage;
-                if (COMPREHENSIVE_LANGUAGES.includes(currentValue)) {
-                    dropdown.setValue(currentValue);
-                } else {
-                    dropdown.setValue('custom');
-                }
-
-                dropdown.onChange(async (value) => {
-                    if (value !== 'custom' && value !== '') {
-                        this.plugin.settings.lintRules.defaultCodeLanguage = value;
-                        await this.plugin.saveSettings();
-                    }
-                });
-
-                return dropdown;
-            })
-            .addText((text) =>
-                text
-                    .setPlaceholder('Enter any language identifier (e.g., ebnf, fift, wgsl)')
-                    .setValue(
-                        COMPREHENSIVE_LANGUAGES.includes(this.plugin.settings.lintRules.defaultCodeLanguage)
-                            ? ''
-                            : this.plugin.settings.lintRules.defaultCodeLanguage
-                    )
-                    .onChange(async (value) => {
-                        if (value.trim()) {
-                            this.plugin.settings.lintRules.defaultCodeLanguage = value.trim().toLowerCase();
-                            await this.plugin.saveSettings();
-                        }
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName('About')
-            .setHeading();
-
-        const aboutEl = containerEl.createDiv();
-        aboutEl.style.marginBottom = '10px';
-        aboutEl.createEl('p', { text: manifest.description });
-        aboutEl.createEl('p', { text: `Version ${manifest.version}`, cls: 'setting-item-description' });
-
-        const developerEl = containerEl.createDiv();
-        developerEl.style.marginBottom = '10px';
-        const devNameEl = developerEl.createEl('div');
-        devNameEl.style.marginBottom = '8px';
-        devNameEl.createEl('strong', { text: 'Developer: ' });
-        devNameEl.appendText('Md. Sazzad Hossain Sharkar');
-        const websiteLink = developerEl.createEl('a', {
-            text: 'Website',
-            href: 'https://szd.sh/',
-        });
-        websiteLink.setAttribute('target', '_blank');
-        websiteLink.style.marginRight = '10px';
-        const githubLink = developerEl.createEl('a', {
-            text: 'GitHub',
-            href: 'https://github.com/SHSharkar',
-        });
-        githubLink.setAttribute('target', '_blank');
-
-        const repoEl = containerEl.createDiv();
-        repoEl.style.marginBottom = '10px';
-        repoEl.createEl('strong', { text: 'Repository: ' });
-        const repoLink = repoEl.createEl('a', {
-            text: 'devops-infinity/obsidian-lint-and-format',
-            href: 'https://github.com/devops-infinity/obsidian-lint-and-format',
-        });
-        repoLink.setAttribute('target', '_blank');
-
-        const fileExtEl = containerEl.createDiv();
-        fileExtEl.style.marginBottom = '10px';
-        fileExtEl.createEl('strong', { text: 'Supported File Extensions: ' });
-        fileExtEl.appendText('.md, .markdown, .mdx');
-
-        const frontMatterEl = containerEl.createDiv();
-        frontMatterEl.createEl('strong', { text: 'YAML Front Matter: ' });
-        frontMatterEl.appendText('Front matter is preserved during formatting and excluded from linting rules.');
-    }
-
-    async confirmReset(): Promise<boolean> {
-        return new Promise((resolve) => {
-            const modal = new Modal(this.app);
-            modal.titleEl.setText('Reset to Default Settings');
-
-            modal.contentEl.createEl('p', {
-                text: 'Are you sure you want to reset all settings to factory defaults? This will:'
-            });
-
-            const list = modal.contentEl.createEl('ul');
-            list.createEl('li', { text: 'Reset all formatting settings (Prettier config)' });
-            list.createEl('li', { text: 'Reset all linting rules' });
-            list.createEl('li', { text: 'Reset general plugin preferences' });
-
-            modal.contentEl.createEl('p', {
-                text: 'This action cannot be undone.',
-                cls: 'mod-warning'
-            });
-
-            const buttonContainer = modal.contentEl.createDiv();
-            buttonContainer.style.display = 'flex';
-            buttonContainer.style.justifyContent = 'flex-end';
-            buttonContainer.style.gap = '10px';
-            buttonContainer.style.marginTop = '20px';
-
-            const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
-            cancelButton.addEventListener('click', () => {
-                modal.close();
-                resolve(false);
-            });
-
-            const resetButton = buttonContainer.createEl('button', {
-                text: 'Reset to Defaults',
-                cls: 'mod-warning'
-            });
-            resetButton.addEventListener('click', () => {
-                modal.close();
-                resolve(true);
-            });
-
-            modal.open();
-        });
-    }
-
-    async resetToDefaults(): Promise<void> {
-        this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-        await this.plugin.saveSettings();
-
-        this.plugin.updateLintStatus(null);
-        this.plugin.updateFormatStatus('idle');
-
-        this.display();
-
-        new Notice('Settings reset to factory defaults successfully!');
     }
 }
