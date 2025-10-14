@@ -37,6 +37,43 @@ export interface MarkdownPostProcessingConfig {
     removeDuplicateBlankLines: boolean;
 }
 
+export interface UIConfig {
+    modalDisplayDelay: number;
+    maxAutoFixIterations: number;
+    formatOnSaveDelay: number;
+    statusBarOpacity: {
+        disabled: number;
+        active: number;
+        idle: number;
+    };
+}
+
+export interface LintAdvancedConfig {
+    brSpaces: number;
+    maxBlankLines: number;
+    headingLinesAbove: number;
+    headingLinesBelow: number;
+    listMarkerSpaces: number;
+    tabIndent: number;
+}
+
+export interface DesignSystem {
+    fontSize: {
+        small: string;
+        medium: string;
+        large: string;
+    };
+    spacing: {
+        button: string;
+        tab: string;
+        badge: string;
+    };
+    animation: {
+        transitionDuration: string;
+        transitionEasing: string;
+    };
+}
+
 export interface PluginSettings {
     enableAutoFormat: boolean;
     enableLinting: boolean;
@@ -46,6 +83,9 @@ export interface PluginSettings {
     prettierConfig: PrettierMarkdownConfig;
     lintRules: LintRules;
     postProcessingConfig: MarkdownPostProcessingConfig;
+    uiConfig: UIConfig;
+    lintAdvancedConfig: LintAdvancedConfig;
+    designSystem: DesignSystem;
 }
 
 export interface LintRules {

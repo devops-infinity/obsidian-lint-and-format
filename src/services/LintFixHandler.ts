@@ -1,16 +1,19 @@
 import { Editor, Notice } from 'obsidian';
-import type { LintResult, LintRules } from '../core/interfaces';
+import type { LintResult, LintRules, LintAdvancedConfig } from '../core/interfaces';
 import { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from '../utils/markdownlintAdapter';
 
 export class LintFixHandler {
     constructor(
         private lintRules: LintRules,
-        private prettierConfig: PrettierMarkdownConfig
+        private prettierConfig: PrettierMarkdownConfig,
+        private recursiveFixDelay: number,
+        private maxAutoFixIterations: number,
+        private advancedConfig: LintAdvancedConfig
     ) {}
 
     async lintContent(markdownContent: string): Promise<LintResult> {
-        return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig);
+        return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig, this.advancedConfig);
     }
 
     async fixAndRecheck(
@@ -54,7 +57,7 @@ export class LintFixHandler {
                         editor,
                         onComplete
                     );
-                }, 100);
+                }, this.recursiveFixDelay);
             } else {
                 onComplete(recheckResult);
             }
@@ -76,10 +79,9 @@ export class LintFixHandler {
     async silentAutoFix(markdownContent: string, editor: Editor): Promise<LintResult> {
         let currentMarkdown = markdownContent;
         let previousIssueCount = Infinity;
-        const maxIterations = 10;
         let iterationCount = 0;
 
-        while (iterationCount < maxIterations) {
+        while (iterationCount < this.maxAutoFixIterations) {
             const lintResult = await this.lintContent(currentMarkdown);
             const fixableIssueCount = this.getFixableCount(lintResult);
 

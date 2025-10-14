@@ -43,4 +43,38 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         noAltText: true,
         filesEndWithNewline: true,
     },
+    uiConfig: {
+        modalDisplayDelay: 100,
+        maxAutoFixIterations: 10,
+        formatOnSaveDelay: 0,
+        statusBarOpacity: {
+            disabled: 0.5,
+            active: 1.0,
+            idle: 0.8,
+        },
+    },
+    lintAdvancedConfig: {
+        brSpaces: 2,
+        maxBlankLines: 1,
+        headingLinesAbove: 1,
+        headingLinesBelow: 1,
+        listMarkerSpaces: 1,
+        tabIndent: 1,
+    },
+    designSystem: {
+        fontSize: {
+            small: '0.9em',
+            medium: '1em',
+            large: '1.1em',
+        },
+        spacing: {
+            button: '8px 16px',
+            tab: '12px 24px',
+            badge: '2px 8px',
+        },
+        animation: {
+            transitionDuration: '0.2s',
+            transitionEasing: 'ease',
+        },
+    },
 };

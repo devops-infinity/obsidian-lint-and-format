@@ -1,4 +1,4 @@
-import type { LintIssue, LintResult, LintRules } from '../core/interfaces';
+import type { LintIssue, LintResult, LintRules, LintAdvancedConfig } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from './prettierConfig';
 
 /**
@@ -117,7 +117,7 @@ export interface MarkdownlintConfig {
     MD059?: boolean | { link_texts?: string[] };
 }
 
-export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfig: PrettierMarkdownConfig): MarkdownlintConfig {
+export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfig: PrettierMarkdownConfig, advancedConfig: LintAdvancedConfig): MarkdownlintConfig {
     const config: MarkdownlintConfig = {
         default: true,
         MD001: rules.headingIncrement,
@@ -128,11 +128,11 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
                 : rules.unorderedListStyle
         },
         MD005: true,
-        MD007: { indent: prettierConfig.useTabs ? 1 : prettierConfig.tabWidth },
-        MD009: { br_spaces: 2, list_item_empty_lines: false },
+        MD007: { indent: prettierConfig.useTabs ? advancedConfig.tabIndent : prettierConfig.tabWidth },
+        MD009: { br_spaces: advancedConfig.brSpaces, list_item_empty_lines: false },
         MD010: { code_blocks: !prettierConfig.useTabs },
         MD011: true,
-        MD012: rules.noMultipleBlankLines ? { maximum: 1 } : false,
+        MD012: rules.noMultipleBlankLines ? { maximum: advancedConfig.maxBlankLines } : false,
         MD013: prettierConfig.printWidth > 0 ? {
             line_length: prettierConfig.printWidth,
             code_blocks: false,
@@ -145,8 +145,8 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
         MD020: true,
         MD021: true,
         MD022: rules.requireBlankLineBeforeHeading || rules.requireBlankLineAfterHeading ? {
-            lines_above: rules.requireBlankLineBeforeHeading ? 1 : 0,
-            lines_below: rules.requireBlankLineAfterHeading ? 1 : 0
+            lines_above: rules.requireBlankLineBeforeHeading ? advancedConfig.headingLinesAbove : 0,
+            lines_below: rules.requireBlankLineAfterHeading ? advancedConfig.headingLinesBelow : 0
         } : false,
         MD023: true,
         MD024: rules.noDuplicateHeadings ? { siblings_only: false } : false,
@@ -155,7 +155,7 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
         MD027: false,
         MD028: false,
         MD029: { style: rules.orderedListStyle },
-        MD030: rules.listMarkerSpace ? { ul_single: 1, ol_single: 1, ul_multi: 1, ol_multi: 1 } : false,
+        MD030: rules.listMarkerSpace ? { ul_single: advancedConfig.listMarkerSpaces, ol_single: advancedConfig.listMarkerSpaces, ul_multi: advancedConfig.listMarkerSpaces, ol_multi: advancedConfig.listMarkerSpaces } : false,
         MD031: rules.blankLinesAroundFences ? { list_items: true } : false,
         MD032: rules.blankLinesAroundLists,
         MD033: { allowed_elements: [] },
@@ -204,10 +204,11 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
 export async function lintMarkdownWithMarkdownlint(
     markdownContent: string,
     lintRules: LintRules,
-    prettierConfig: PrettierMarkdownConfig
+    prettierConfig: PrettierMarkdownConfig,
+    advancedConfig: LintAdvancedConfig
 ): Promise<LintResult> {
     try {
-        const markdownlintConfig = mapLintRulesToMarkdownlintConfig(lintRules, prettierConfig);
+        const markdownlintConfig = mapLintRulesToMarkdownlintConfig(lintRules, prettierConfig, advancedConfig);
 
         const lintOptions: any = {
             strings: {

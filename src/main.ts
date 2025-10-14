@@ -18,7 +18,13 @@ export default class LintAndFormatPlugin extends Plugin {
     async onload() {
         await this.loadSettings();
 
-        this.lintFixHandler = new LintFixHandler(this.settings.lintRules, this.settings.prettierConfig);
+        this.lintFixHandler = new LintFixHandler(
+            this.settings.lintRules,
+            this.settings.prettierConfig,
+            this.settings.uiConfig.modalDisplayDelay,
+            this.settings.uiConfig.maxAutoFixIterations,
+            this.settings.lintAdvancedConfig
+        );
 
         registerHeroicons();
 
@@ -90,7 +96,7 @@ export default class LintAndFormatPlugin extends Plugin {
                             if (finalResult.totalIssues > 0) {
                                 setTimeout(() => {
                                     new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
-                                }, 100);
+                                }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
                     );
@@ -190,11 +196,11 @@ export default class LintAndFormatPlugin extends Plugin {
                                                 }
                                             );
                                         }).open();
-                                    }, 100);
+                                    }, this.settings.uiConfig.modalDisplayDelay);
                                 } else {
                                     setTimeout(() => {
                                         new LintResultsModalWrapper(this.app, recheckResult, async () => {}).open();
-                                    }, 100);
+                                    }, this.settings.uiConfig.modalDisplayDelay);
                                 }
                             }
                         } else {
@@ -206,7 +212,7 @@ export default class LintAndFormatPlugin extends Plugin {
                                 new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
                                 setTimeout(() => {
                                     new LintResultsModalWrapper(this.app, lintResult, async () => {}).open();
-                                }, 100);
+                                }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
                     }
@@ -254,7 +260,7 @@ export default class LintAndFormatPlugin extends Plugin {
                                 }
 
                                 this.updateFormatStatus('success');
-                            }, 0);
+                            }, this.settings.uiConfig.formatOnSaveDelay);
                         } else if (result.error) {
                             this.updateFormatStatus('error');
                         }
@@ -323,7 +329,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     if (finalResult.totalIssues > 0) {
                         setTimeout(() => {
                             new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
-                        }, 100);
+                        }, this.settings.uiConfig.modalDisplayDelay);
                     }
                 }
             );
@@ -370,7 +376,7 @@ export default class LintAndFormatPlugin extends Plugin {
         if (!this.settings.enableLinting) {
             setIcon(this.lintStatusBarElement, 'x-circle');
             this.lintStatusBarElement.setAttribute('aria-label', 'Linting is disabled. Click to run lint check anyway.');
-            this.lintStatusBarElement.style.opacity = '0.5';
+            this.lintStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.disabled);
             this.lintStatusBarElement.style.cursor = 'pointer';
             return;
         }
@@ -382,13 +388,13 @@ export default class LintAndFormatPlugin extends Plugin {
             this.lintStatusBarElement.setAttribute('aria-label', `${lintResult.totalIssues} lint issue${lintResult.totalIssues > 1 ? 's' : ''} found. Click to view details.`);
             this.lintStatusBarElement.style.color = 'var(--text-warning)';
             this.lintStatusBarElement.style.cursor = 'pointer';
-            this.lintStatusBarElement.style.opacity = '1';
+            this.lintStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.active);
         } else {
             setIcon(this.lintStatusBarElement, 'paint-brush');
             this.lintStatusBarElement.setAttribute('aria-label', 'No lint issues found. Click to re-check.');
             this.lintStatusBarElement.style.color = 'var(--text-success)';
             this.lintStatusBarElement.style.cursor = 'pointer';
-            this.lintStatusBarElement.style.opacity = '1';
+            this.lintStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.active);
         }
     }
 
@@ -401,7 +407,7 @@ export default class LintAndFormatPlugin extends Plugin {
         if (!this.settings.enableAutoFormat) {
             setIcon(this.formatStatusBarElement, 'document-text');
             this.formatStatusBarElement.setAttribute('aria-label', 'Auto-formatting is disabled. Enable in settings.');
-            this.formatStatusBarElement.style.opacity = '0.5';
+            this.formatStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.disabled);
             this.formatStatusBarElement.style.cursor = 'pointer';
             return;
         }
@@ -412,20 +418,20 @@ export default class LintAndFormatPlugin extends Plugin {
                 this.formatStatusBarElement.setAttribute('aria-label', 'Document formatted successfully');
                 this.formatStatusBarElement.style.color = 'var(--text-success)';
                 this.formatStatusBarElement.style.cursor = 'pointer';
-                this.formatStatusBarElement.style.opacity = '1';
+                this.formatStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.active);
                 break;
             case 'error':
                 setIcon(this.formatStatusBarElement, 'x-circle');
                 this.formatStatusBarElement.setAttribute('aria-label', 'Formatting error occurred. Check console for details.');
                 this.formatStatusBarElement.style.color = 'var(--text-error)';
                 this.formatStatusBarElement.style.cursor = 'pointer';
-                this.formatStatusBarElement.style.opacity = '1';
+                this.formatStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.active);
                 break;
             case 'idle':
             default:
                 setIcon(this.formatStatusBarElement, 'document-text');
                 this.formatStatusBarElement.setAttribute('aria-label', 'Format ready. Run format command to format document.');
-                this.formatStatusBarElement.style.opacity = '0.8';
+                this.formatStatusBarElement.style.opacity = String(this.settings.uiConfig.statusBarOpacity.idle);
                 this.formatStatusBarElement.style.cursor = 'pointer';
                 break;
         }
