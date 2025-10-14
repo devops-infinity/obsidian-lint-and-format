@@ -1,5 +1,5 @@
 import { Editor, Notice } from 'obsidian';
-import type { LintResult, LintRules } from '../types';
+import type { LintResult, LintRules } from '../core/interfaces';
 import { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from '../utils/markdownlintAdapter';
 
@@ -9,36 +9,36 @@ export class LintFixHandler {
         private prettierConfig: PrettierMarkdownConfig
     ) {}
 
-    async lintContent(content: string): Promise<LintResult> {
-        return await lintMarkdown(content, this.lintRules, this.prettierConfig);
+    async lintContent(markdownContent: string): Promise<LintResult> {
+        return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig);
     }
 
     async fixAndRecheck(
-        content: string,
-        result: LintResult,
+        markdownContent: string,
+        lintResult: LintResult,
         editor: Editor
     ): Promise<{ fixed: string; recheckResult: LintResult; fixedCount: number }> {
-        const fixedContent = await fixLintIssues(
-            content,
-            result.rawResult,
+        const fixedMarkdown = await fixLintIssues(
+            markdownContent,
+            lintResult.rawResult,
             this.lintRules.defaultCodeLanguage
         );
 
-        editor.setValue(fixedContent);
+        editor.setValue(fixedMarkdown);
 
-        const recheckResult = await this.lintContent(fixedContent);
-        const fixedCount = result.issues.filter(i => i.fixable).length;
+        const recheckResult = await this.lintContent(fixedMarkdown);
+        const fixedIssueCount = lintResult.issues.filter(issue => issue.fixable).length;
 
-        return { fixed: fixedContent, recheckResult, fixedCount };
+        return { fixed: fixedMarkdown, recheckResult, fixedCount: fixedIssueCount };
     }
 
     async recursiveFixWithCallback(
-        content: string,
-        result: LintResult,
+        markdownContent: string,
+        lintResult: LintResult,
         editor: Editor,
         onComplete: (finalResult: LintResult) => void
     ): Promise<void> {
-        const { fixed, recheckResult, fixedCount } = await this.fixAndRecheck(content, result, editor);
+        const { fixed: fixedMarkdown, recheckResult, fixedCount } = await this.fixAndRecheck(markdownContent, lintResult, editor);
 
         if (recheckResult.totalIssues === 0) {
             new Notice('All issues fixed successfully!');
@@ -46,10 +46,10 @@ export class LintFixHandler {
         } else {
             new Notice(`Fixed ${fixedCount} issue(s). ${recheckResult.totalIssues} issue(s) remaining.`);
 
-            if (recheckResult.issues.filter(i => i.fixable).length > 0) {
+            if (recheckResult.issues.filter(issue => issue.fixable).length > 0) {
                 setTimeout(async () => {
                     await this.recursiveFixWithCallback(
-                        fixed,
+                        fixedMarkdown,
                         recheckResult,
                         editor,
                         onComplete
@@ -61,45 +61,45 @@ export class LintFixHandler {
         }
     }
 
-    showLintSummary(result: LintResult, showErrors: boolean): void {
-        if (showErrors && result.totalIssues > 0) {
+    showLintSummary(lintResult: LintResult, showErrors: boolean): void {
+        if (showErrors && lintResult.totalIssues > 0) {
             new Notice(
-                `Found ${result.totalIssues} issue(s): ${result.errorCount} error(s), ${result.warningCount} warning(s)`
+                `Found ${lintResult.totalIssues} issue(s): ${lintResult.errorCount} error(s), ${lintResult.warningCount} warning(s)`
             );
         }
     }
 
-    getFixableCount(result: LintResult): number {
-        return result.issues.filter(i => i.fixable).length;
+    getFixableCount(lintResult: LintResult): number {
+        return lintResult.issues.filter(issue => issue.fixable).length;
     }
 
-    async silentAutoFix(content: string, editor: Editor): Promise<LintResult> {
-        let currentContent = content;
+    async silentAutoFix(markdownContent: string, editor: Editor): Promise<LintResult> {
+        let currentMarkdown = markdownContent;
         let previousIssueCount = Infinity;
-        let maxIterations = 10;
-        let iteration = 0;
+        const maxIterations = 10;
+        let iterationCount = 0;
 
-        while (iteration < maxIterations) {
-            const lintResult = await this.lintContent(currentContent);
-            const fixableCount = this.getFixableCount(lintResult);
+        while (iterationCount < maxIterations) {
+            const lintResult = await this.lintContent(currentMarkdown);
+            const fixableIssueCount = this.getFixableCount(lintResult);
 
-            if (fixableCount === 0 || lintResult.totalIssues >= previousIssueCount) {
+            if (fixableIssueCount === 0 || lintResult.totalIssues >= previousIssueCount) {
                 return lintResult;
             }
 
             previousIssueCount = lintResult.totalIssues;
 
-            const fixedContent = await fixLintIssues(
-                currentContent,
+            const fixedMarkdown = await fixLintIssues(
+                currentMarkdown,
                 lintResult.rawResult,
                 this.lintRules.defaultCodeLanguage
             );
 
-            currentContent = fixedContent;
-            editor.setValue(fixedContent);
-            iteration++;
+            currentMarkdown = fixedMarkdown;
+            editor.setValue(fixedMarkdown);
+            iterationCount++;
         }
 
-        return await this.lintContent(currentContent);
+        return await this.lintContent(currentMarkdown);
     }
 }

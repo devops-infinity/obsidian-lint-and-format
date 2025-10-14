@@ -1,4 +1,4 @@
-import type { PrettierMarkdownConfig } from './utils/prettierConfig';
+import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 
 export interface LintIssue {
     line: number;

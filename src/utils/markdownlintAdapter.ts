@@ -1,4 +1,4 @@
-import type { LintIssue, LintResult, LintRules } from '../types';
+import type { LintIssue, LintResult, LintRules } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from './prettierConfig';
 
 /**
@@ -202,69 +202,69 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
 }
 
 export async function lintMarkdownWithMarkdownlint(
-    content: string,
-    rules: LintRules,
+    markdownContent: string,
+    lintRules: LintRules,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<LintResult> {
     try {
-        const config = mapLintRulesToMarkdownlintConfig(rules, prettierConfig);
+        const markdownlintConfig = mapLintRulesToMarkdownlintConfig(lintRules, prettierConfig);
 
-        const options: any = {
+        const lintOptions: any = {
             strings: {
-                'content.md': content
+                'content.md': markdownContent
             },
-            config
+            config: markdownlintConfig
         };
 
         const { lint } = await import('markdownlint/promise');
-        const result = await lint(options);
-        const issues: LintIssue[] = [];
+        const rawLintResult = await lint(lintOptions);
+        const lintIssues: LintIssue[] = [];
 
-        if (result && result['content.md']) {
-            for (const error of result['content.md']) {
-                const lineNumber = error.lineNumber;
+        if (rawLintResult && rawLintResult['content.md']) {
+            for (const markdownlintError of rawLintResult['content.md']) {
+                const issueLineNumber = markdownlintError.lineNumber;
 
-                let severity: 'error' | 'warning' | 'info' = 'warning';
-                if (error.ruleNames[0] === 'MD001') {
-                    severity = 'error';
-                } else if (error.ruleNames[0] === 'MD013' || error.ruleNames[0] === 'MD022') {
-                    severity = 'info';
+                let issueSeverity: 'error' | 'warning' | 'info' = 'warning';
+                if (markdownlintError.ruleNames[0] === 'MD001') {
+                    issueSeverity = 'error';
+                } else if (markdownlintError.ruleNames[0] === 'MD013' || markdownlintError.ruleNames[0] === 'MD022') {
+                    issueSeverity = 'info';
                 }
 
-                const fixable = error.fixInfo !== undefined && error.fixInfo !== null;
+                const isFixable = markdownlintError.fixInfo !== undefined && markdownlintError.fixInfo !== null;
 
-                let message = error.ruleDescription;
-                if (error.errorDetail) {
-                    message += ` (${error.errorDetail})`;
-                } else if (error.errorContext) {
-                    message += ` - ${error.errorContext}`;
+                let issueMessage = markdownlintError.ruleDescription;
+                if (markdownlintError.errorDetail) {
+                    issueMessage += ` (${markdownlintError.errorDetail})`;
+                } else if (markdownlintError.errorContext) {
+                    issueMessage += ` - ${markdownlintError.errorContext}`;
                 }
 
-                issues.push({
-                    line: lineNumber,
-                    column: error.errorRange ? error.errorRange[0] : 1,
-                    severity,
-                    message,
-                    rule: error.ruleNames[0],
-                    fixable,
-                    fixInfo: error.fixInfo
+                lintIssues.push({
+                    line: issueLineNumber,
+                    column: markdownlintError.errorRange ? markdownlintError.errorRange[0] : 1,
+                    severity: issueSeverity,
+                    message: issueMessage,
+                    rule: markdownlintError.ruleNames[0],
+                    fixable: isFixable,
+                    fixInfo: markdownlintError.fixInfo
                 });
             }
         }
 
-        const errorCount = issues.filter((i) => i.severity === 'error').length;
-        const warningCount = issues.filter((i) => i.severity === 'warning').length;
-        const infoCount = issues.filter((i) => i.severity === 'info').length;
+        const errorIssueCount = lintIssues.filter((issue) => issue.severity === 'error').length;
+        const warningIssueCount = lintIssues.filter((issue) => issue.severity === 'warning').length;
+        const infoIssueCount = lintIssues.filter((issue) => issue.severity === 'info').length;
 
         return {
-            issues,
-            totalIssues: issues.length,
-            errorCount,
-            warningCount,
-            infoCount,
-            rawResult: result['content.md']
+            issues: lintIssues,
+            totalIssues: lintIssues.length,
+            errorCount: errorIssueCount,
+            warningCount: warningIssueCount,
+            infoCount: infoIssueCount,
+            rawResult: rawLintResult['content.md']
         };
-    } catch (error) {
+    } catch (lintError) {
         return {
             issues: [],
             totalIssues: 0,
@@ -275,122 +275,122 @@ export async function lintMarkdownWithMarkdownlint(
     }
 }
 
-export function fixOversizedFenceMarkers(content: string): string {
-    const lines = content.split('\n');
+export function fixOversizedFenceMarkers(markdownContent: string): string {
+    const contentLines = markdownContent.split('\n');
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    for (let lineIndex = 0; lineIndex < contentLines.length; lineIndex++) {
+        const currentLine = contentLines[lineIndex];
 
-        const backtickMatch = line.match(/^(`{4,})(.*)$/);
-        if (backtickMatch) {
-            lines[i] = '```' + backtickMatch[2];
+        const backtickFenceMatch = currentLine.match(/^(`{4,})(.*)$/);
+        if (backtickFenceMatch) {
+            contentLines[lineIndex] = '```' + backtickFenceMatch[2];
             continue;
         }
 
-        const tildeMatch = line.match(/^(~{4,})(.*)$/);
-        if (tildeMatch) {
-            lines[i] = '~~~' + tildeMatch[2];
+        const tildeFenceMatch = currentLine.match(/^(~{4,})(.*)$/);
+        if (tildeFenceMatch) {
+            contentLines[lineIndex] = '~~~' + tildeFenceMatch[2];
         }
     }
 
-    return lines.join('\n');
+    return contentLines.join('\n');
 }
 
-export function removeEmptyCodeBlocks(content: string): string {
-    const lines = content.split('\n');
-    const blockRanges: { start: number; end: number }[] = [];
+export function removeEmptyCodeBlocks(markdownContent: string): string {
+    const contentLines = markdownContent.split('\n');
+    const emptyBlockRanges: { start: number; end: number }[] = [];
 
-    let i = 0;
-    while (i < lines.length) {
-        const line = lines[i];
+    let currentLineIndex = 0;
+    while (currentLineIndex < contentLines.length) {
+        const currentLine = contentLines[currentLineIndex];
 
-        const openMatch = line.match(/^(```|~~~)/);
+        const openingFenceMatch = currentLine.match(/^(```|~~~)/);
 
-        if (openMatch) {
-            const fenceChar = openMatch[1][0];
-            let j = i + 1;
-            let hasContent = false;
-            let closingIndex = -1;
+        if (openingFenceMatch) {
+            const fenceCharacter = openingFenceMatch[1][0];
+            let searchIndex = currentLineIndex + 1;
+            let blockHasContent = false;
+            let closingFenceIndex = -1;
 
-            while (j < lines.length) {
-                const checkLine = lines[j];
+            while (searchIndex < contentLines.length) {
+                const searchLine = contentLines[searchIndex];
 
-                const closeMatch = checkLine.match(new RegExp(`^${fenceChar}{3,}\\s*$`));
+                const closingFenceMatch = searchLine.match(new RegExp(`^${fenceCharacter}{3,}\\s*$`));
 
-                if (closeMatch) {
-                    closingIndex = j;
+                if (closingFenceMatch) {
+                    closingFenceIndex = searchIndex;
                     break;
                 }
 
-                if (checkLine.trim().length > 0) {
-                    hasContent = true;
+                if (searchLine.trim().length > 0) {
+                    blockHasContent = true;
                 }
 
-                j++;
+                searchIndex++;
             }
 
-            if (closingIndex !== -1 && !hasContent) {
-                blockRanges.push({ start: i, end: closingIndex });
-                i = closingIndex + 1;
+            if (closingFenceIndex !== -1 && !blockHasContent) {
+                emptyBlockRanges.push({ start: currentLineIndex, end: closingFenceIndex });
+                currentLineIndex = closingFenceIndex + 1;
                 continue;
             }
         }
 
-        i++;
+        currentLineIndex++;
     }
 
-    for (let idx = blockRanges.length - 1; idx >= 0; idx--) {
-        const range = blockRanges[idx];
-        lines.splice(range.start, range.end - range.start + 1);
+    for (let rangeIndex = emptyBlockRanges.length - 1; rangeIndex >= 0; rangeIndex--) {
+        const blockRange = emptyBlockRanges[rangeIndex];
+        contentLines.splice(blockRange.start, blockRange.end - blockRange.start + 1);
     }
 
-    return lines.join('\n');
+    return contentLines.join('\n');
 }
 
-export function fixMD040Violations(content: string, lintResult: any, defaultLanguage: string): string {
-    if (!lintResult || !Array.isArray(lintResult)) {
-        return content;
+export function fixMD040Violations(markdownContent: string, rawLintResult: any, defaultCodeLanguage: string): string {
+    if (!rawLintResult || !Array.isArray(rawLintResult)) {
+        return markdownContent;
     }
 
-    const md040Errors = lintResult.filter((error: any) => error.ruleNames && error.ruleNames.includes('MD040'));
+    const md040ViolationErrors = rawLintResult.filter((lintError: any) => lintError.ruleNames && lintError.ruleNames.includes('MD040'));
 
-    if (md040Errors.length === 0) {
-        return content;
+    if (md040ViolationErrors.length === 0) {
+        return markdownContent;
     }
 
-    const lines = content.split('\n');
+    const contentLines = markdownContent.split('\n');
 
-    for (const error of md040Errors.reverse()) {
-        const lineIndex = error.lineNumber - 1;
-        if (lineIndex < 0 || lineIndex >= lines.length) continue;
+    for (const violationError of md040ViolationErrors.reverse()) {
+        const violationLineIndex = violationError.lineNumber - 1;
+        if (violationLineIndex < 0 || violationLineIndex >= contentLines.length) continue;
 
-        const line = lines[lineIndex];
-        if (line.match(/^```\s*$/)) {
-            lines[lineIndex] = '```' + defaultLanguage;
-        } else if (line.match(/^~~~\s*$/)) {
-            lines[lineIndex] = '~~~' + defaultLanguage;
+        const violationLine = contentLines[violationLineIndex];
+        if (violationLine.match(/^```\s*$/)) {
+            contentLines[violationLineIndex] = '```' + defaultCodeLanguage;
+        } else if (violationLine.match(/^~~~\s*$/)) {
+            contentLines[violationLineIndex] = '~~~' + defaultCodeLanguage;
         }
     }
 
-    return lines.join('\n');
+    return contentLines.join('\n');
 }
 
-export async function fixLintIssuesWithMarkdownlint(content: string, lintResult: any, defaultLanguage: string = 'text'): Promise<string> {
+export async function fixLintIssuesWithMarkdownlint(markdownContent: string, rawLintResult: any, defaultCodeLanguage: string = 'text'): Promise<string> {
     try {
         const { applyFixes } = await import('markdownlint');
 
-        if (lintResult && Array.isArray(lintResult)) {
-            let fixedContent = applyFixes(content, lintResult);
+        if (rawLintResult && Array.isArray(rawLintResult)) {
+            let fixedMarkdown = applyFixes(markdownContent, rawLintResult);
 
-            fixedContent = fixMD040Violations(fixedContent, lintResult, defaultLanguage);
-            fixedContent = fixOversizedFenceMarkers(fixedContent);
-            fixedContent = removeEmptyCodeBlocks(fixedContent);
+            fixedMarkdown = fixMD040Violations(fixedMarkdown, rawLintResult, defaultCodeLanguage);
+            fixedMarkdown = fixOversizedFenceMarkers(fixedMarkdown);
+            fixedMarkdown = removeEmptyCodeBlocks(fixedMarkdown);
 
-            return fixedContent;
+            return fixedMarkdown;
         }
 
-        return content;
-    } catch (error) {
-        return content;
+        return markdownContent;
+    } catch (fixError) {
+        return markdownContent;
     }
 }

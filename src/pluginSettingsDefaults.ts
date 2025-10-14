@@ -1,4 +1,4 @@
-import type { PluginSettings } from './types';
+import type { PluginSettings } from './core/interfaces';
 import { DEFAULT_PRETTIER_CONFIG } from './utils/prettierConfig';
 
 export const DEFAULT_SETTINGS: PluginSettings = {

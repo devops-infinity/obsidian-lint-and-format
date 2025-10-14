@@ -15,7 +15,7 @@ export const HEROICON_PATHS = {
 };
 
 export function registerHeroicons(): void {
-	Object.entries(HEROICON_PATHS).forEach(([name, path]) => {
-		addIcon(name, path);
+	Object.entries(HEROICON_PATHS).forEach(([iconName, svgPath]) => {
+		addIcon(iconName, svgPath);
 	});
 }

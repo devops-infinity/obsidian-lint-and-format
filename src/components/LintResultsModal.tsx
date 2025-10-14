@@ -1,4 +1,4 @@
-import type { LintResult } from '../types';
+import type { LintResult } from '../core/interfaces';
 import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/designTokens';
 import { getSeverityColor, getSeverityIcon, getSuccessIcon } from '../utils/severityHelpers';
 
@@ -7,8 +7,8 @@ interface LintResultsModalProps {
     onFix: () => void | Promise<void>;
 }
 
-export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
-    const hasFixableIssues = result.issues.some((issue) => issue.fixable);
+export function LintResultsModal({ result: lintResult, onFix }: LintResultsModalProps) {
+    const hasFixableIssues = lintResult.issues.some((issue) => issue.fixable);
 
     return (
         <div style={createStyles.container()}>
@@ -25,27 +25,27 @@ export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
                     fontSize: fontSize.sm,
                 }}>
                     <div>
-                        <strong>Total:</strong> {result.totalIssues}
+                        <strong>Total:</strong> {lintResult.totalIssues}
                     </div>
-                    {result.errorCount > 0 && (
+                    {lintResult.errorCount > 0 && (
                         <div style={{ color: getSeverityColor('error') }}>
-                            <strong>Errors:</strong> {result.errorCount}
+                            <strong>Errors:</strong> {lintResult.errorCount}
                         </div>
                     )}
-                    {result.warningCount > 0 && (
+                    {lintResult.warningCount > 0 && (
                         <div style={{ color: getSeverityColor('warning') }}>
-                            <strong>Warnings:</strong> {result.warningCount}
+                            <strong>Warnings:</strong> {lintResult.warningCount}
                         </div>
                     )}
-                    {result.infoCount > 0 && (
+                    {lintResult.infoCount > 0 && (
                         <div style={{ color: getSeverityColor('info') }}>
-                            <strong>Info:</strong> {result.infoCount}
+                            <strong>Info:</strong> {lintResult.infoCount}
                         </div>
                     )}
                 </div>
             </div>
 
-            {result.totalIssues === 0 ? (
+            {lintResult.totalIssues === 0 ? (
                 <div style={{
                     padding: '40px',
                     textAlign: 'center',
@@ -79,25 +79,25 @@ export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
                     )}
 
                     <div style={{ maxHeight: '450px', overflowY: 'auto' }}>
-                        {result.issues.map((issue, index) => (
+                        {lintResult.issues.map((lintIssue, issueIndex) => (
                             <div
-                                key={index}
+                                key={issueIndex}
                                 style={{
                                     padding: '8px 10px',
                                     marginBottom: '6px',
                                     backgroundColor: 'var(--background-secondary)',
-                                    borderLeft: `3px solid ${getSeverityColor(issue.severity)}`,
+                                    borderLeft: `3px solid ${getSeverityColor(lintIssue.severity)}`,
                                     borderRadius: '4px',
                                     fontSize: fontSize.sm,
                                 }}
                             >
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                                     <div style={{
-                                        color: getSeverityColor(issue.severity),
+                                        color: getSeverityColor(lintIssue.severity),
                                         flexShrink: 0,
                                         marginTop: '2px',
                                     }}>
-                                        {getSeverityIcon(issue.severity)}
+                                        {getSeverityIcon(lintIssue.severity)}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{
@@ -109,19 +109,19 @@ export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
                                         }}>
                                             <span style={{
                                                 fontWeight: 600,
-                                                color: getSeverityColor(issue.severity),
+                                                color: getSeverityColor(lintIssue.severity),
                                                 fontSize: fontSize.sm,
                                             }}>
-                                                Line {issue.line}:{issue.column}
+                                                Line {lintIssue.line}:{lintIssue.column}
                                             </span>
                                             <span style={{
                                                 fontSize: '11px',
                                                 color: colors.text.muted,
                                                 fontFamily: 'var(--font-monospace)',
                                             }}>
-                                                {issue.rule}
+                                                {lintIssue.rule}
                                             </span>
-                                            {issue.fixable && (
+                                            {lintIssue.fixable && (
                                                 <span style={{
                                                     fontSize: '10px',
                                                     fontWeight: 600,
@@ -139,7 +139,7 @@ export function LintResultsModal({ result, onFix }: LintResultsModalProps) {
                                             lineHeight: '1.4',
                                             wordBreak: 'break-word',
                                         }}>
-                                            {issue.message}
+                                            {lintIssue.message}
                                         </div>
                                     </div>
                                 </div>

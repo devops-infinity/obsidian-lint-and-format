@@ -1,7 +1,7 @@
 import { Editor, MarkdownView, Notice, Plugin, TFile, setIcon } from 'obsidian';
-import type { PluginSettings, LintResult } from './types';
-import { DEFAULT_SETTINGS } from './settings';
-import { formatMarkdown } from './utils/formatter';
+import type { PluginSettings, LintResult } from './core/interfaces';
+import { DEFAULT_SETTINGS } from './pluginSettingsDefaults';
+import { formatMarkdown } from './formatters/markdownFormatter';
 import { registerHeroicons } from './utils/heroicons';
 import { LintResultsModalWrapper } from './components/LintResultsModalWrapper';
 import { LintAndFormatSettingTab } from './settings/LintAndFormatSettingTab';
@@ -9,10 +9,10 @@ import { LintFixHandler } from './services/LintFixHandler';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
-    private lintStatusEl: HTMLElement | null = null;
-    private formatStatusEl: HTMLElement | null = null;
-    private lastLintResult: LintResult | null = null;
-    private lastFormatStatus: 'success' | 'error' | 'idle' = 'idle';
+    private lintStatusBarElement: HTMLElement | null = null;
+    private formatStatusBarElement: HTMLElement | null = null;
+    private cachedLintValidationResult: LintResult | null = null;
+    private cachedFormatOperationStatus: 'success' | 'error' | 'idle' = 'idle';
     private lintFixHandler: LintFixHandler;
 
     async onload() {
@@ -22,14 +22,14 @@ export default class LintAndFormatPlugin extends Plugin {
 
         registerHeroicons();
 
-        this.lintStatusEl = this.addStatusBarItem();
-        this.lintStatusEl.addClass('lint-status');
-        this.lintStatusEl.addEventListener('click', () => this.handleLintStatusClick());
+        this.lintStatusBarElement = this.addStatusBarItem();
+        this.lintStatusBarElement.addClass('lint-status');
+        this.lintStatusBarElement.addEventListener('click', () => this.handleLintStatusClick());
         this.updateLintStatus(null);
 
-        this.formatStatusEl = this.addStatusBarItem();
-        this.formatStatusEl.addClass('format-status');
-        this.formatStatusEl.addEventListener('click', () => this.handleFormatStatusClick());
+        this.formatStatusBarElement = this.addStatusBarItem();
+        this.formatStatusBarElement.addClass('format-status');
+        this.formatStatusBarElement.addEventListener('click', () => this.handleFormatStatusClick());
         this.updateFormatStatus('idle');
 
         this.addRibbonIcon('check-circle', 'Lint & Format', () => {
@@ -279,8 +279,8 @@ export default class LintAndFormatPlugin extends Plugin {
     }
 
     onunload() {
-        this.lintStatusEl?.remove();
-        this.formatStatusEl?.remove();
+        this.lintStatusBarElement?.remove();
+        this.formatStatusBarElement?.remove();
     }
 
     async loadSettings() {
@@ -361,72 +361,72 @@ export default class LintAndFormatPlugin extends Plugin {
         }
     }
 
-    updateLintStatus(result: LintResult | null) {
-        if (!this.lintStatusEl) return;
+    updateLintStatus(lintResult: LintResult | null) {
+        if (!this.lintStatusBarElement) return;
 
-        this.lastLintResult = result;
-        this.lintStatusEl.empty();
+        this.cachedLintValidationResult = lintResult;
+        this.lintStatusBarElement.empty();
 
         if (!this.settings.enableLinting) {
-            setIcon(this.lintStatusEl, 'x-circle');
-            this.lintStatusEl.setAttribute('aria-label', 'Linting is disabled. Click to run lint check anyway.');
-            this.lintStatusEl.style.opacity = '0.5';
-            this.lintStatusEl.style.cursor = 'pointer';
+            setIcon(this.lintStatusBarElement, 'x-circle');
+            this.lintStatusBarElement.setAttribute('aria-label', 'Linting is disabled. Click to run lint check anyway.');
+            this.lintStatusBarElement.style.opacity = '0.5';
+            this.lintStatusBarElement.style.cursor = 'pointer';
             return;
         }
 
-        if (result && result.totalIssues > 0) {
-            setIcon(this.lintStatusEl, 'face-frown');
-            const countSpan = this.lintStatusEl.createSpan({ text: `${result.totalIssues}` });
-            countSpan.style.marginLeft = '4px';
-            this.lintStatusEl.setAttribute('aria-label', `${result.totalIssues} lint issue${result.totalIssues > 1 ? 's' : ''} found. Click to view details.`);
-            this.lintStatusEl.style.color = 'var(--text-warning)';
-            this.lintStatusEl.style.cursor = 'pointer';
-            this.lintStatusEl.style.opacity = '1';
+        if (lintResult && lintResult.totalIssues > 0) {
+            setIcon(this.lintStatusBarElement, 'face-frown');
+            const issueCountSpan = this.lintStatusBarElement.createSpan({ text: `${lintResult.totalIssues}` });
+            issueCountSpan.style.marginLeft = '4px';
+            this.lintStatusBarElement.setAttribute('aria-label', `${lintResult.totalIssues} lint issue${lintResult.totalIssues > 1 ? 's' : ''} found. Click to view details.`);
+            this.lintStatusBarElement.style.color = 'var(--text-warning)';
+            this.lintStatusBarElement.style.cursor = 'pointer';
+            this.lintStatusBarElement.style.opacity = '1';
         } else {
-            setIcon(this.lintStatusEl, 'paint-brush');
-            this.lintStatusEl.setAttribute('aria-label', 'No lint issues found. Click to re-check.');
-            this.lintStatusEl.style.color = 'var(--text-success)';
-            this.lintStatusEl.style.cursor = 'pointer';
-            this.lintStatusEl.style.opacity = '1';
+            setIcon(this.lintStatusBarElement, 'paint-brush');
+            this.lintStatusBarElement.setAttribute('aria-label', 'No lint issues found. Click to re-check.');
+            this.lintStatusBarElement.style.color = 'var(--text-success)';
+            this.lintStatusBarElement.style.cursor = 'pointer';
+            this.lintStatusBarElement.style.opacity = '1';
         }
     }
 
-    updateFormatStatus(status: 'success' | 'error' | 'idle') {
-        if (!this.formatStatusEl) return;
+    updateFormatStatus(formatOperationStatus: 'success' | 'error' | 'idle') {
+        if (!this.formatStatusBarElement) return;
 
-        this.lastFormatStatus = status;
-        this.formatStatusEl.empty();
+        this.cachedFormatOperationStatus = formatOperationStatus;
+        this.formatStatusBarElement.empty();
 
         if (!this.settings.enableAutoFormat) {
-            setIcon(this.formatStatusEl, 'document-text');
-            this.formatStatusEl.setAttribute('aria-label', 'Auto-formatting is disabled. Enable in settings.');
-            this.formatStatusEl.style.opacity = '0.5';
-            this.formatStatusEl.style.cursor = 'pointer';
+            setIcon(this.formatStatusBarElement, 'document-text');
+            this.formatStatusBarElement.setAttribute('aria-label', 'Auto-formatting is disabled. Enable in settings.');
+            this.formatStatusBarElement.style.opacity = '0.5';
+            this.formatStatusBarElement.style.cursor = 'pointer';
             return;
         }
 
-        switch (status) {
+        switch (formatOperationStatus) {
             case 'success':
-                setIcon(this.formatStatusEl, 'sparkles');
-                this.formatStatusEl.setAttribute('aria-label', 'Document formatted successfully');
-                this.formatStatusEl.style.color = 'var(--text-success)';
-                this.formatStatusEl.style.cursor = 'pointer';
-                this.formatStatusEl.style.opacity = '1';
+                setIcon(this.formatStatusBarElement, 'sparkles');
+                this.formatStatusBarElement.setAttribute('aria-label', 'Document formatted successfully');
+                this.formatStatusBarElement.style.color = 'var(--text-success)';
+                this.formatStatusBarElement.style.cursor = 'pointer';
+                this.formatStatusBarElement.style.opacity = '1';
                 break;
             case 'error':
-                setIcon(this.formatStatusEl, 'x-circle');
-                this.formatStatusEl.setAttribute('aria-label', 'Formatting error occurred. Check console for details.');
-                this.formatStatusEl.style.color = 'var(--text-error)';
-                this.formatStatusEl.style.cursor = 'pointer';
-                this.formatStatusEl.style.opacity = '1';
+                setIcon(this.formatStatusBarElement, 'x-circle');
+                this.formatStatusBarElement.setAttribute('aria-label', 'Formatting error occurred. Check console for details.');
+                this.formatStatusBarElement.style.color = 'var(--text-error)';
+                this.formatStatusBarElement.style.cursor = 'pointer';
+                this.formatStatusBarElement.style.opacity = '1';
                 break;
             case 'idle':
             default:
-                setIcon(this.formatStatusEl, 'document-text');
-                this.formatStatusEl.setAttribute('aria-label', 'Format ready. Run format command to format document.');
-                this.formatStatusEl.style.opacity = '0.8';
-                this.formatStatusEl.style.cursor = 'pointer';
+                setIcon(this.formatStatusBarElement, 'document-text');
+                this.formatStatusBarElement.setAttribute('aria-label', 'Format ready. Run format command to format document.');
+                this.formatStatusBarElement.style.opacity = '0.8';
+                this.formatStatusBarElement.style.cursor = 'pointer';
                 break;
         }
     }

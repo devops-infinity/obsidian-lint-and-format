@@ -15,15 +15,15 @@ export function getSeverityColor(severity: string): string {
 }
 
 export function getSeverityIcon(severity: string) {
-    const iconProps = { style: { width: '18px', height: '18px', display: 'inline-block' } };
+    const severityIconStyles = { style: { width: '18px', height: '18px', display: 'inline-block' } };
 
     switch (severity) {
         case 'error':
-            return <XCircleIcon {...iconProps} />;
+            return <XCircleIcon {...severityIconStyles} />;
         case 'warning':
-            return <ExclamationCircleIcon {...iconProps} />;
+            return <ExclamationCircleIcon {...severityIconStyles} />;
         case 'info':
-            return <InformationCircleIcon {...iconProps} />;
+            return <InformationCircleIcon {...severityIconStyles} />;
         default:
             return <span style={{ fontSize: '18px' }}>•</span>;
     }
