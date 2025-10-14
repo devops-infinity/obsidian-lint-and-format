@@ -16,8 +16,34 @@ Writing clean, consistent markdown makes your notes easier to read and maintain.
 ### ✨ Prettier Integration
 Professional-grade markdown formatting powered by Prettier. Get perfectly formatted notes with proper line wrapping, consistent spacing, and clean structure.
 
-### 🔍 Custom Lint Rules
-Enforce your markdown style preferences:
+### 🔍 Comprehensive Lint Rules (26+ Configurable Rules)
+Powered by industry-standard **markdownlint** with 50+ professional rules (MD001-MD050), this plugin offers extensive markdown style enforcement:
+
+**Structure Rules** (6 rules):
+- Enforce incremental heading levels (MD001)
+- Prevent duplicate headings (MD024)
+- Single top-level heading per document (MD025)
+- Remove trailing punctuation from headings (MD026)
+- Optional first-line H1 requirement (MD041)
+- Files end with newline (MD047)
+
+**List Rules** (4 rules):
+- Unordered list marker style (asterisk/plus/dash/consistent)
+- Ordered list numbering (one/ordered/one_or_ordered)
+- Consistent spacing after list markers
+- Blank lines around lists
+
+**Code Block Rules** (3 rules):
+- Blank lines around code fences
+- Code block style preference (fenced/indented/consistent)
+- Code fence style (backtick/tilde/consistent)
+- **200+ Language Support** - Auto-detect and fix unlabeled code blocks with configurable default language
+
+**Links & Images Rules** (2 rules):
+- Enforce formatted URLs vs bare URLs
+- Require image alt text for accessibility
+
+**Spacing & Style Rules**:
 - Control line length limits
 - Remove trailing spaces automatically
 - Manage blank lines around headings
@@ -26,20 +52,27 @@ Enforce your markdown style preferences:
 
 ### 📊 Status Bar Integration
 Keep track of your document's health at a glance with beautiful Heroicons status bar indicators:
-- **Lint Status** - Shows ✓ (check-circle) when clean, ⚠️ (exclamation-circle) with issue count when problems detected
-- **Format Status** - Shows ✨ (sparkles) after successful formatting, ✕ (x-circle) on errors, 📄 (document-text) when ready
+- **Lint Status** - Shows ✓ (check-circle) when clean, 😞 (face-frown) with issue count when problems detected, ✕ (x-circle) when disabled
+- **Format Status** - Shows 🎨 (paint-brush) after successful formatting, ✕ (x-circle) on errors, 📄 (document-text) when ready
 - Status updates automatically when you switch between documents or run commands
 - Icons adapt to your Obsidian theme (light/dark mode)
 
 ### 🔧 Auto-Fix Capability
 Many lint issues can be fixed automatically. No need to manually adjust spacing or formatting—just run the auto-fix command.
 
+**Advanced Auto-Fix Features**:
+- **Formatter-Linter Synchronization** - The "Format and Lint Document" command intelligently runs Prettier formatting first, then automatically applies lint fixes without user intervention, ensuring both tools work in harmony
+- **Custom Fix Handlers** - Includes specialized fixes for oversized code fence markers (4+ chars → 3 chars) and empty code block removal
+- **Official markdownlint Integration** - Uses markdownlint's native `applyFixes()` API for reliable, standards-compliant corrections
+
 ### ⚙️ Flexible Settings
 Customize everything through Obsidian's settings interface:
 - Enable or disable specific features
-- Configure Prettier formatting options
-- Set your preferred lint rules
+- Configure Prettier formatting options (synchronized with lint rules)
+- Set your preferred lint rules (26+ configurable options)
 - Choose when formatting happens (on-demand or on-save)
+- **Factory Reset** - Deep copy reset with confirmation modal to restore all defaults
+- **Synchronized Configs** - Prettier and markdownlint settings are automatically linked (printWidth, tabWidth, useTabs) to prevent conflicts
 
 ### 🏷️ YAML Front Matter Support
 Your metadata is safe! The plugin:
@@ -100,26 +133,52 @@ Access settings through **Settings → Community Plugins → Lint & Format**
 #### General Settings
 - **Enable auto-formatting** - Allow the plugin to format documents
 - **Enable linting** - Allow the plugin to check for style issues
-- **Format on save** - Automatically format when saving files
+- **Format on save** - Automatically format when saving files (triggers on file modification events, preserves cursor position and scroll state)
 - **Show lint errors** - Display notifications for lint issues
 
 #### Format Settings
-Configure how Prettier formats your markdown:
-- **Print Width** - Maximum line length (default: 100, recommended for balanced readability)
-- **Tab Width** - Spaces per indentation level (default: 2)
-- **Use Tabs** - Use tabs instead of spaces
+Configure how Prettier formats your markdown (automatically synchronized with lint rules):
+- **Print Width** - Maximum line length (default: 80, matches official Prettier default, synced with MD013)
+- **Tab Width** - Spaces per indentation level (default: 2, synced with MD007 list indentation)
+- **Use Tabs** - Use tabs instead of spaces (synced with MD010 hard tab detection)
 - **Prose Wrap** - How to wrap long lines (default: preserve)
 - **End of Line** - Line ending style (LF, CRLF, or Auto)
 
 #### Lint Rules
-Customize which style rules to enforce:
-- Maximum line length
+Customize which style rules to enforce (26+ configurable options):
+
+**Structure Rules**:
+- Heading increment (MD001)
+- No duplicate headings (MD024)
+- Single H1 (MD025)
+- No trailing punctuation in headings (MD026)
+- First line H1 (MD041, default: OFF)
+- Files end with newline (MD047)
+
+**List Rules**:
+- Unordered list style (MD004)
+- Ordered list style (MD029)
+- List marker spacing (MD030)
+- Blank lines around lists (MD032)
+
+**Code Block Rules**:
+- Blank lines around fences (MD031)
+- Code block style (MD046)
+- Code fence style (MD048)
+- **Default code language** (MD040) - Choose from 200+ languages across 20 categories (Web, Mobile, Scientific, etc.)
+
+**Links & Images**:
+- No bare URLs (MD034, default: OFF)
+- Image alt text required (MD045)
+
+**Spacing & Style**:
+- Maximum line length (synced with Prettier printWidth)
 - No trailing spaces
 - No multiple blank lines
 - Blank line before/after headings
 - Heading style (ATX vs Setext)
-- List item indentation
-- Emphasis markers (asterisk vs underscore)
+- Emphasis markers (asterisk/underscore/consistent, default: consistent)
+- Strong markers (double asterisk/underscore/consistent, default: consistent)
 
 ## Tips & Best Practices
 
@@ -135,6 +194,32 @@ There's no "perfect" markdown style—configure the plugin to match how you like
 ### Lint Before Important Exports
 Run a quick lint check before exporting or publishing your notes to ensure everything looks professional.
 
+## Technical Details
+
+### Linting Engine
+This plugin uses **markdownlint** (v0.38.0+), the industry-standard markdown linter with 50+ professional rules (MD001-MD059). Previously used remark-lint, migrated for better rule coverage and auto-fix capabilities.
+
+### Formatter-Linter Integration
+The plugin implements intelligent coordination between Prettier and markdownlint:
+- Settings are automatically synchronized (printWidth ↔ MD013, tabWidth ↔ MD007, useTabs ↔ MD010)
+- "Format and Lint Document" command prevents conflicts by running Prettier first, then automatically applying lint fixes
+- Includes custom fix handlers for edge cases (oversized code fences, empty code blocks)
+
+### Language Support
+Comprehensive code language detection and configuration:
+- 200+ supported languages via modular `codeLanguages.ts` architecture
+- Supports GitHub Linguist, highlight.js, and Prism.js identifiers
+- 20 language categories: Web, Mobile, Scientific, Systems, Data Science, DevOps, etc.
+- Custom input field for any language identifier not in dropdown
+
+### Auto-Format Behavior
+Format-on-save triggers on file modification events (not editor changes) to prevent disruption during typing. Preserves cursor position and scroll state after formatting using stored editor state restoration.
+
+### Dependencies
+- markdownlint: ^0.38.0 (linting engine)
+- prettier: ^3.4.2 (formatting engine)
+- 193 total npm packages (reduced from 225 after remark-lint removal)
+
 ## Troubleshooting
 
 ### Plugin Not Working?
@@ -145,11 +230,13 @@ Run a quick lint check before exporting or publishing your notes to ensure every
 ### Formatting Looks Wrong?
 1. Check your Format Settings to adjust Prettier options
 2. Remember: YAML front matter is intentionally excluded from formatting
+3. If Prettier and markdownlint conflict, use "Format and Lint Document" command which synchronizes both automatically
 
 ### Lint Errors Seem Incorrect?
 1. Review your Lint Rules in settings
 2. Disable specific rules you don't need
 3. Some issues may not be auto-fixable and require manual correction
+4. Check if formatter settings are synchronized (printWidth, tabWidth, useTabs)
 
 ## Development
 
