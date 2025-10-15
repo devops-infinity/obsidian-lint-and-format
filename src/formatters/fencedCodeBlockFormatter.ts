@@ -37,110 +37,110 @@ const PROGRAMMING_LANGUAGE_TO_PRETTIER_PARSER: Record<string, PrettierLanguageCo
     yml: { parserName: 'yaml', requiredPlugins: [prettierPluginYaml] },
 };
 
-function extractFencedCodeBlocksFromMarkdown(markdownContent: string): FencedCodeBlockMetadata[] {
-    const fencedCodeBlockPattern = /```(\w+)?\n([\s\S]*?)```/g;
-    const discoveredCodeBlocks: FencedCodeBlockMetadata[] = [];
-    let patternMatch;
+function extractFencedCodeBlocksFromMarkdown(documentContent: string): FencedCodeBlockMetadata[] {
+    const codeBlockFencePattern = /```(\w+)?\n([\s\S]*?)```/g;
+    const extractedCodeBlocks: FencedCodeBlockMetadata[] = [];
+    let match;
 
-    while ((patternMatch = fencedCodeBlockPattern.exec(markdownContent)) !== null) {
-        discoveredCodeBlocks.push({
-            languageIdentifier: (patternMatch[1] || '').toLowerCase(),
-            rawCodeContent: patternMatch[2],
-            documentStartPosition: patternMatch.index,
-            documentEndPosition: patternMatch.index + patternMatch[0].length,
-            completeBlockText: patternMatch[0],
+    while ((match = codeBlockFencePattern.exec(documentContent)) !== null) {
+        extractedCodeBlocks.push({
+            languageIdentifier: (match[1] || '').toLowerCase(),
+            rawCodeContent: match[2],
+            documentStartPosition: match.index,
+            documentEndPosition: match.index + match[0].length,
+            completeBlockText: match[0],
         });
     }
 
-    return discoveredCodeBlocks;
+    return extractedCodeBlocks;
 }
 
 async function formatCodeWithPrettier(
-    sourceCode: string,
-    programmingLanguage: string,
-    userPrettierConfig: PrettierMarkdownConfig
+    unformattedCode: string,
+    languageIdentifier: string,
+    prettierConfiguration: PrettierMarkdownConfig
 ): Promise<string> {
-    const prettierConfiguration = PROGRAMMING_LANGUAGE_TO_PRETTIER_PARSER[programmingLanguage];
+    const languageConfig = PROGRAMMING_LANGUAGE_TO_PRETTIER_PARSER[languageIdentifier];
 
-    if (!prettierConfiguration) {
-        return sourceCode;
+    if (!languageConfig) {
+        return unformattedCode;
     }
 
     try {
-        const beautifiedCode = await prettier.format(sourceCode, {
-            ...userPrettierConfig,
-            parser: prettierConfiguration.parserName,
-            plugins: prettierConfiguration.requiredPlugins,
+        const formattedCode = await prettier.format(unformattedCode, {
+            ...prettierConfiguration,
+            parser: languageConfig.parserName,
+            plugins: languageConfig.requiredPlugins,
         });
 
-        return beautifiedCode.trim();
-    } catch (prettierFormattingError) {
-        return sourceCode;
+        return formattedCode.trim();
+    } catch (formattingError) {
+        return unformattedCode;
     }
 }
 
 export async function formatAllFencedCodeBlocks(
-    markdownContent: string,
+    documentContent: string,
     languagesEnabledForFormatting: string[],
-    userPrettierConfig: PrettierMarkdownConfig
+    prettierConfiguration: PrettierMarkdownConfig
 ): Promise<string> {
-    const extractedCodeBlocks = extractFencedCodeBlocksFromMarkdown(markdownContent);
-    let transformedMarkdownContent = markdownContent;
-    let cumulativePositionOffset = 0;
+    const allCodeBlocks = extractFencedCodeBlocksFromMarkdown(documentContent);
+    let documentContentWithFormattedCode = documentContent;
+    let positionOffset = 0;
 
-    for (const codeBlockMetadata of extractedCodeBlocks) {
-        const shouldSkipLanguage =
+    for (const codeBlock of allCodeBlocks) {
+        const isLanguageExcluded =
             languagesEnabledForFormatting.length > 0 &&
-            !languagesEnabledForFormatting.includes(codeBlockMetadata.languageIdentifier);
+            !languagesEnabledForFormatting.includes(codeBlock.languageIdentifier);
 
-        if (shouldSkipLanguage) {
+        if (isLanguageExcluded) {
             continue;
         }
 
-        const formattedCodeContent = await formatCodeWithPrettier(
-            codeBlockMetadata.rawCodeContent,
-            codeBlockMetadata.languageIdentifier,
-            userPrettierConfig
+        const formattedCode = await formatCodeWithPrettier(
+            codeBlock.rawCodeContent,
+            codeBlock.languageIdentifier,
+            prettierConfiguration
         );
 
-        const wasCodeModified = formattedCodeContent !== codeBlockMetadata.rawCodeContent;
-        if (wasCodeModified) {
-            const reconstructedCodeBlock =
-                `\`\`\`${codeBlockMetadata.languageIdentifier}\n${formattedCodeContent}\n\`\`\``;
+        const hasCodeChanges = formattedCode !== codeBlock.rawCodeContent;
+        if (hasCodeChanges) {
+            const updatedCodeBlock =
+                `\`\`\`${codeBlock.languageIdentifier}\n${formattedCode}\n\`\`\``;
 
-            const adjustedStartPosition = codeBlockMetadata.documentStartPosition + cumulativePositionOffset;
-            const adjustedEndPosition = codeBlockMetadata.documentEndPosition + cumulativePositionOffset;
+            const startPosition = codeBlock.documentStartPosition + positionOffset;
+            const endPosition = codeBlock.documentEndPosition + positionOffset;
 
-            transformedMarkdownContent =
-                transformedMarkdownContent.slice(0, adjustedStartPosition) +
-                reconstructedCodeBlock +
-                transformedMarkdownContent.slice(adjustedEndPosition);
+            documentContentWithFormattedCode =
+                documentContentWithFormattedCode.slice(0, startPosition) +
+                updatedCodeBlock +
+                documentContentWithFormattedCode.slice(endPosition);
 
-            const blockLengthDifference = reconstructedCodeBlock.length - codeBlockMetadata.completeBlockText.length;
-            cumulativePositionOffset += blockLengthDifference;
+            const lengthDelta = updatedCodeBlock.length - codeBlock.completeBlockText.length;
+            positionOffset += lengthDelta;
         }
     }
 
-    return transformedMarkdownContent;
+    return documentContentWithFormattedCode;
 }
 
-export function normalizeBashScriptCodeBlocks(markdownContent: string): string {
-    const bashCodeBlockPattern = /```(?:bash|shell|sh)\n([\s\S]*?)```/g;
+export function normalizeBashScriptCodeBlocks(documentContent: string): string {
+    const bashFencePattern = /```(?:bash|shell|sh)\n([\s\S]*?)```/g;
 
-    return markdownContent.replace(bashCodeBlockPattern, (fullMatch, scriptContent) => {
-        const scriptLines = scriptContent.split('\n');
-        const normalizedLines = scriptLines.map((scriptLine: string) => {
-            const trimmedLine = scriptLine.trim();
+    return documentContent.replace(bashFencePattern, (match, bashScript) => {
+        const lines = bashScript.split('\n');
+        const trimmedLines = lines.map((line: string) => {
+            const content = line.trim();
 
-            const isCommentOrEmpty = trimmedLine.startsWith('#') || trimmedLine === '';
-            if (isCommentOrEmpty) {
-                return trimmedLine;
+            const shouldPreserve = content.startsWith('#') || content === '';
+            if (shouldPreserve) {
+                return content;
             }
 
-            return trimmedLine;
+            return content;
         });
 
-        const detectedLanguage = fullMatch.match(/```(\w+)/)?.[1] || 'bash';
-        return `\`\`\`${detectedLanguage}\n${normalizedLines.join('\n')}\n\`\`\``;
+        const languageTag = match.match(/```(\w+)/)?.[1] || 'bash';
+        return `\`\`\`${languageTag}\n${trimmedLines.join('\n')}\n\`\`\``;
     });
 }

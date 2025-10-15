@@ -8,75 +8,75 @@ import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { extractFrontMatter, reconstructWithFrontMatter, validateYAMLFrontMatter } from '../parsers/yamlFrontMatterParser';
 
 export async function buildTableOfContentsInMarkdown(
-    markdownContent: string,
+    documentContent: string,
     maximumHeadingDepth: number,
     insertionPosition: 'top' | 'after-frontmatter',
-    userLintRules: LintRules,
+    lintRules: LintRules,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
-    const { frontMatter, body: markdownBodyWithoutFrontmatter, hasFrontMatter } = extractFrontMatter(markdownContent);
+    const { frontMatter, body: documentBodyWithoutFrontMatter, hasFrontMatter } = extractFrontMatter(documentContent);
 
     if (hasFrontMatter && frontMatter) {
         const validation = validateYAMLFrontMatter(frontMatter);
         if (!validation.valid) {
-            return markdownContent;
+            return documentContent;
         }
     }
 
-    const tocHeadingAlreadyExists = /^##?\s+table\s+of\s+contents/im.test(markdownBodyWithoutFrontmatter);
+    const hasTocHeading = /^##?\s+table\s+of\s+contents/im.test(documentBodyWithoutFrontMatter);
 
-    let contentPreparedForTocGeneration = markdownBodyWithoutFrontmatter;
-    if (!tocHeadingAlreadyExists) {
+    let documentContentWithTocPlaceholder = documentBodyWithoutFrontMatter;
+    if (!hasTocHeading) {
         const tocHeading = '## Table of Contents\n\n';
         const shouldInsertAtTop = insertionPosition === 'top' && !hasFrontMatter;
 
         if (shouldInsertAtTop || insertionPosition === 'after-frontmatter') {
-            contentPreparedForTocGeneration = tocHeading + markdownBodyWithoutFrontmatter;
+            documentContentWithTocPlaceholder = tocHeading + documentBodyWithoutFrontMatter;
         } else {
-            contentPreparedForTocGeneration = tocHeading + markdownBodyWithoutFrontmatter;
+            documentContentWithTocPlaceholder = tocHeading + documentBodyWithoutFrontMatter;
         }
     }
 
-    const listBulletCharacter = userLintRules.unorderedListStyle === 'asterisk' ? '*'
-        : userLintRules.unorderedListStyle === 'plus' ? '+'
+    const listBulletCharacter = lintRules.unorderedListStyle === 'asterisk' ? '*'
+        : lintRules.unorderedListStyle === 'plus' ? '+'
         : '-';
 
-    const tocConfiguration = {
+    const tableOfContentsConfig = {
         maxDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
         tight: true,
     };
 
-    const remarkProcessor = unified()
+    const unifiedMarkdownProcessor = unified()
         .use(remarkParse)
         .use(remarkGfm)
-        .use(remarkToc, tocConfiguration)
+        .use(remarkToc, tableOfContentsConfig)
         .use(remarkStringify, {
             bullet: listBulletCharacter,
             listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
         });
 
     try {
-        const processingResult = await remarkProcessor.process(contentPreparedForTocGeneration);
-        const markdownWithGeneratedToc = String(processingResult);
+        const transformationResult = await unifiedMarkdownProcessor.process(documentContentWithTocPlaceholder);
+        const documentContentWithToc = String(transformationResult);
 
-        return reconstructWithFrontMatter(frontMatter, markdownWithGeneratedToc);
-    } catch (tocGenerationError) {
-        return markdownContent;
+        return reconstructWithFrontMatter(frontMatter, documentContentWithToc);
+    } catch (tableOfContentsError) {
+        return documentContent;
     }
 }
 
-export function removeExistingTableOfContents(markdownContent: string): string {
-    const { frontMatter, body: markdownBodyWithoutFrontmatter, hasFrontMatter } = extractFrontMatter(markdownContent);
+export function removeExistingTableOfContents(documentContent: string): string {
+    const { frontMatter, body: documentBodyWithoutFrontMatter, hasFrontMatter } = extractFrontMatter(documentContent);
 
     if (hasFrontMatter && frontMatter) {
         const validation = validateYAMLFrontMatter(frontMatter);
         if (!validation.valid) {
-            return markdownContent;
+            return documentContent;
         }
     }
 
-    const tocSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?)+/im;
-    const markdownWithTocRemoved = markdownBodyWithoutFrontmatter.replace(tocSectionPattern, '');
+    const tableOfContentsSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?)+/im;
+    const documentContentWithoutToc = documentBodyWithoutFrontMatter.replace(tableOfContentsSectionPattern, '');
 
-    return reconstructWithFrontMatter(frontMatter, markdownWithTocRemoved);
+    return reconstructWithFrontMatter(frontMatter, documentContentWithoutToc);
 }

@@ -4,103 +4,103 @@ import { normalizeMarkdownListStructure, collapseConsecutiveBlankLines } from '.
 import { formatAllFencedCodeBlocks, normalizeBashScriptCodeBlocks } from './fencedCodeBlockFormatter';
 import { buildTableOfContentsInMarkdown } from './tableOfContentsBuilder';
 
-export interface MarkdownPostProcessingResult {
-    wasContentModified: boolean;
-    postProcessedMarkdownContent: string;
-    errorMessage?: string;
+export interface PostProcessingResult {
+    hasChanges: boolean;
+    processedContent: string;
+    error?: string;
     appliedTransformations: string[];
 }
 
 export async function applyMarkdownPostProcessing(
-    originalMarkdownContent: string,
-    configuredFeatures: MarkdownPostProcessingConfig,
-    userPrettierConfig: PrettierMarkdownConfig,
-    userLintRules: LintRules
-): Promise<MarkdownPostProcessingResult> {
-    let currentlyProcessedContent = originalMarkdownContent;
-    const successfullyAppliedTransformations: string[] = [];
-    let contentWasModified = false;
+    originalDocumentContent: string,
+    postProcessingFeatures: MarkdownPostProcessingConfig,
+    prettierConfiguration: PrettierMarkdownConfig,
+    lintRules: LintRules
+): Promise<PostProcessingResult> {
+    let workingDocumentContent = originalDocumentContent;
+    const appliedTransformations: string[] = [];
+    let hasContentChanged = false;
 
     try {
-        if (configuredFeatures.removeDuplicateBlankLines) {
-            const contentBeforeBlankLineCollapse = currentlyProcessedContent;
-            currentlyProcessedContent = collapseConsecutiveBlankLines(currentlyProcessedContent);
+        if (postProcessingFeatures.removeDuplicateBlankLines) {
+            const contentBeforeChange = workingDocumentContent;
+            workingDocumentContent = collapseConsecutiveBlankLines(workingDocumentContent);
 
-            const blankLinesWereCollapsed = currentlyProcessedContent !== contentBeforeBlankLineCollapse;
-            if (blankLinesWereCollapsed) {
-                successfullyAppliedTransformations.push('Collapsed excessive blank lines');
-                contentWasModified = true;
+            const hasBlankLinesChanged = workingDocumentContent !== contentBeforeChange;
+            if (hasBlankLinesChanged) {
+                appliedTransformations.push('Collapsed excessive blank lines');
+                hasContentChanged = true;
             }
         }
 
-        if (configuredFeatures.enableListFormatting) {
-            const contentBeforeListNormalization = currentlyProcessedContent;
-            currentlyProcessedContent = await normalizeMarkdownListStructure(
-                currentlyProcessedContent,
-                configuredFeatures.enableLineTrimmingInLists,
-                userLintRules,
-                userPrettierConfig
+        if (postProcessingFeatures.enableListFormatting) {
+            const contentBeforeChange = workingDocumentContent;
+            workingDocumentContent = await normalizeMarkdownListStructure(
+                workingDocumentContent,
+                postProcessingFeatures.enableLineTrimmingInLists,
+                lintRules,
+                prettierConfiguration
             );
 
-            const listsWereNormalized = currentlyProcessedContent !== contentBeforeListNormalization;
-            if (listsWereNormalized) {
-                successfullyAppliedTransformations.push('Normalized list structure and spacing');
-                contentWasModified = true;
+            const hasListsChanged = workingDocumentContent !== contentBeforeChange;
+            if (hasListsChanged) {
+                appliedTransformations.push('Normalized list structure and spacing');
+                hasContentChanged = true;
             }
         }
 
-        if (configuredFeatures.enableCodeBlockFormatting) {
-            const contentBeforeCodeFormatting = currentlyProcessedContent;
+        if (postProcessingFeatures.enableCodeBlockFormatting) {
+            const contentBeforeChange = workingDocumentContent;
 
             const shouldFormatBashScripts =
-                configuredFeatures.codeBlockLanguages.includes('bash') ||
-                configuredFeatures.codeBlockLanguages.includes('shell');
+                postProcessingFeatures.codeBlockLanguages.includes('bash') ||
+                postProcessingFeatures.codeBlockLanguages.includes('shell');
 
             if (shouldFormatBashScripts) {
-                currentlyProcessedContent = normalizeBashScriptCodeBlocks(currentlyProcessedContent);
+                workingDocumentContent = normalizeBashScriptCodeBlocks(workingDocumentContent);
             }
 
-            const nonBashLanguagesToFormat = configuredFeatures.codeBlockLanguages.filter(
+            const nonBashLanguagesToFormat = postProcessingFeatures.codeBlockLanguages.filter(
                 languageId => !['bash', 'shell', 'sh'].includes(languageId)
             );
 
             const hasNonBashLanguages = nonBashLanguagesToFormat.length > 0;
             if (hasNonBashLanguages) {
-                currentlyProcessedContent = await formatAllFencedCodeBlocks(
-                    currentlyProcessedContent,
+                workingDocumentContent = await formatAllFencedCodeBlocks(
+                    workingDocumentContent,
                     nonBashLanguagesToFormat,
-                    userPrettierConfig
+                    prettierConfiguration
                 );
             }
 
-            const codeBlocksWereFormatted = currentlyProcessedContent !== contentBeforeCodeFormatting;
-            if (codeBlocksWereFormatted) {
-                successfullyAppliedTransformations.push('Formatted code within fenced blocks');
-                contentWasModified = true;
+            const hasCodeBlocksChanged = workingDocumentContent !== contentBeforeChange;
+            if (hasCodeBlocksChanged) {
+                appliedTransformations.push('Formatted code within fenced blocks');
+                hasContentChanged = true;
             }
         }
 
-        if (configuredFeatures.enableTocGeneration) {
-            const contentBeforeTocGeneration = currentlyProcessedContent;
-            currentlyProcessedContent = await buildTableOfContentsInMarkdown(
-                currentlyProcessedContent,
-                configuredFeatures.tocDepth,
-                configuredFeatures.tocPosition,
-                userLintRules,
-                userPrettierConfig
+        if (postProcessingFeatures.enableTocGeneration) {
+            const contentBeforeChange = workingDocumentContent;
+            workingDocumentContent = await buildTableOfContentsInMarkdown(
+                workingDocumentContent,
+                postProcessingFeatures.tocDepth,
+                postProcessingFeatures.tocPosition,
+                lintRules,
+                prettierConfiguration
             );
 
-            const tocWasGenerated = currentlyProcessedContent !== contentBeforeTocGeneration;
-            if (tocWasGenerated) {
-                successfullyAppliedTransformations.push('Generated table of contents');
-                contentWasModified = true;
+            const hasTocChanged = workingDocumentContent !== contentBeforeChange;
+            if (hasTocChanged) {
+                appliedTransformations.push('Generated table of contents');
+                hasContentChanged = true;
             }
         }
 
         return {
-            wasContentModified: contentWasModified,
-            postProcessedMarkdownContent: currentlyProcessedContent,
-            appliedTransformations: successfullyAppliedTransformations,
+            hasChanges: hasContentChanged,
+            processedContent: workingDocumentContent,
+            appliedTransformations,
         };
     } catch (postProcessingError) {
         const errorDescription = postProcessingError instanceof Error
@@ -108,10 +108,10 @@ export async function applyMarkdownPostProcessing(
             : 'Unknown error occurred during markdown post-processing';
 
         return {
-            wasContentModified: false,
-            postProcessedMarkdownContent: originalMarkdownContent,
-            errorMessage: errorDescription,
-            appliedTransformations: successfullyAppliedTransformations,
+            hasChanges: false,
+            processedContent: originalDocumentContent,
+            error: errorDescription,
+            appliedTransformations,
         };
     }
 }

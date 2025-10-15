@@ -11,14 +11,14 @@ export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
     private lintStatusBarElement: HTMLElement | null = null;
     private formatStatusBarElement: HTMLElement | null = null;
-    private cachedLintValidationResult: LintResult | null = null;
-    private cachedFormatOperationStatus: 'success' | 'error' | 'idle' = 'idle';
-    private lintFixHandler: LintValidationService;
+    private currentDocumentLintStatus: LintResult | null = null;
+    private currentDocumentFormatState: 'success' | 'error' | 'idle' = 'idle';
+    private lintValidationService: LintValidationService;
 
     async onload() {
         await this.loadSettings();
 
-        this.lintFixHandler = new LintValidationService(
+        this.lintValidationService = new LintValidationService(
             this.settings.lintRules,
             this.settings.prettierConfig,
             this.settings.uiConfig.modalDisplayDelay,
@@ -51,17 +51,17 @@ export default class LintAndFormatPlugin extends Plugin {
                     return;
                 }
 
-                const content = editor.getValue();
-                const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                const currentMarkdownContent = editor.getValue();
+                const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
-                if (result.error) {
-                    new Notice(`Formatting error: ${result.error}`);
+                if (formatOperationResult.error) {
+                    new Notice(`Formatting error: ${formatOperationResult.error}`);
                     this.updateFormatStatus('error');
                     return;
                 }
 
-                if (result.formatted) {
-                    editor.setValue(result.content);
+                if (formatOperationResult.formatted) {
+                    editor.setValue(formatOperationResult.content);
                     new Notice('Document formatted successfully!');
                     this.updateFormatStatus('success');
                 } else {
@@ -80,22 +80,22 @@ export default class LintAndFormatPlugin extends Plugin {
                     return;
                 }
 
-                const content = editor.getValue();
-                const result = await this.lintFixHandler.lintContent(content);
+                const currentMarkdownContent = editor.getValue();
+                const lintValidationResult = await this.lintValidationService.lintContent(currentMarkdownContent);
 
-                this.updateLintStatus(result);
-                this.lintFixHandler.showLintSummary(result, this.settings.showLintErrors);
+                this.updateLintStatus(lintValidationResult);
+                this.lintValidationService.showLintSummary(lintValidationResult, this.settings.showLintErrors);
 
-                new LintValidationDialog(this.app, result, async () => {
-                    await this.lintFixHandler.recursiveFixWithCallback(
-                        content,
-                        result,
+                new LintValidationDialog(this.app, lintValidationResult, async () => {
+                    await this.lintValidationService.applyAutofixesRecursively(
+                        currentMarkdownContent,
+                        lintValidationResult,
                         editor,
-                        (finalResult) => {
-                            this.updateLintStatus(finalResult);
-                            if (finalResult.totalIssues > 0) {
+                        (finalValidationResult) => {
+                            this.updateLintStatus(finalValidationResult);
+                            if (finalValidationResult.totalIssues > 0) {
                                 setTimeout(() => {
-                                    new LintValidationDialog(this.app, finalResult, async () => {}, this.settings.designSystem).open();
+                                    new LintValidationDialog(this.app, finalValidationResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
@@ -113,26 +113,26 @@ export default class LintAndFormatPlugin extends Plugin {
                     return;
                 }
 
-                const content = editor.getValue();
-                const result = await this.lintFixHandler.lintContent(content);
+                const currentMarkdownContent = editor.getValue();
+                const lintValidationResult = await this.lintValidationService.lintContent(currentMarkdownContent);
 
-                this.updateLintStatus(result);
+                this.updateLintStatus(lintValidationResult);
 
-                if (result.totalIssues === 0) {
+                if (lintValidationResult.totalIssues === 0) {
                     new Notice('No issues found!');
                     this.updateLintStatus(null);
                     return;
                 }
 
-                const fixableCount = this.lintFixHandler.getFixableCount(result);
-                if (fixableCount === 0) {
-                    new Notice(`Found ${result.totalIssues} issue(s), but none are auto-fixable.`);
+                const fixableIssueCount = this.lintValidationService.getFixableCount(lintValidationResult);
+                if (fixableIssueCount === 0) {
+                    new Notice(`Found ${lintValidationResult.totalIssues} issue(s), but none are auto-fixable.`);
                     return;
                 }
 
-                const { recheckResult } = await this.lintFixHandler.fixAndRecheck(content, result, editor);
-                new Notice(`Fixed ${fixableCount} issue(s)!`);
-                this.updateLintStatus(recheckResult);
+                const { validatedResult } = await this.lintValidationService.applyAutofixesAndValidate(currentMarkdownContent, lintValidationResult, editor);
+                new Notice(`Fixed ${fixableIssueCount} issue(s)!`);
+                this.updateLintStatus(validatedResult);
             },
         });
 
@@ -140,21 +140,21 @@ export default class LintAndFormatPlugin extends Plugin {
             id: 'format-and-lint-document',
             name: 'Format and Lint Document',
             editorCallback: async (editor: Editor, _view: MarkdownView) => {
-                const content = editor.getValue();
-                let formattedContent = content;
+                const currentMarkdownContent = editor.getValue();
+                let formattedMarkdownContent = currentMarkdownContent;
 
                 if (this.settings.enableAutoFormat) {
-                    const formatResult = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                    const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
-                    if (formatResult.error) {
-                        new Notice(`Formatting error: ${formatResult.error}`);
+                    if (formatOperationResult.error) {
+                        new Notice(`Formatting error: ${formatOperationResult.error}`);
                         this.updateFormatStatus('error');
                         return;
                     }
 
-                    if (formatResult.formatted) {
-                        formattedContent = formatResult.content;
-                        editor.setValue(formattedContent);
+                    if (formatOperationResult.formatted) {
+                        formattedMarkdownContent = formatOperationResult.content;
+                        editor.setValue(formattedMarkdownContent);
                         this.updateFormatStatus('success');
                     } else {
                         this.updateFormatStatus('success');
@@ -163,55 +163,55 @@ export default class LintAndFormatPlugin extends Plugin {
 
                 if (this.settings.enableLinting) {
                     if (this.settings.autoFixLintIssues) {
-                        const finalResult = await this.lintFixHandler.silentAutoFix(formattedContent, editor);
-                        this.updateLintStatus(finalResult);
+                        const finalValidationResult = await this.lintValidationService.applyAutofixesQuietly(formattedMarkdownContent, editor);
+                        this.updateLintStatus(finalValidationResult);
 
-                        if (finalResult.totalIssues === 0) {
+                        if (finalValidationResult.totalIssues === 0) {
                             new Notice('Document formatted and all lint issues auto-fixed!');
                         } else {
-                            new Notice(`Document formatted and fixed. ${finalResult.totalIssues} issue(s) remaining (not auto-fixable).`);
+                            new Notice(`Document formatted and fixed. ${finalValidationResult.totalIssues} issue(s) remaining (not auto-fixable).`);
                         }
                     } else {
-                        const lintResult = await this.lintFixHandler.lintContent(formattedContent);
-                        const fixableCount = this.lintFixHandler.getFixableCount(lintResult);
+                        const lintValidationResult = await this.lintValidationService.lintContent(formattedMarkdownContent);
+                        const fixableIssueCount = this.lintValidationService.getFixableCount(lintValidationResult);
 
-                        if (fixableCount > 0) {
-                            const { recheckResult } = await this.lintFixHandler.fixAndRecheck(formattedContent, lintResult, editor);
-                            this.updateLintStatus(recheckResult);
+                        if (fixableIssueCount > 0) {
+                            const { validatedResult } = await this.lintValidationService.applyAutofixesAndValidate(formattedMarkdownContent, lintValidationResult, editor);
+                            this.updateLintStatus(validatedResult);
 
-                            if (recheckResult.totalIssues === 0) {
-                                new Notice(`Document formatted and ${fixableCount} lint issue(s) auto-fixed!`);
+                            if (validatedResult.totalIssues === 0) {
+                                new Notice(`Document formatted and ${fixableIssueCount} lint issue(s) auto-fixed!`);
                             } else {
-                                new Notice(`Document formatted, ${fixableCount} issues fixed. ${recheckResult.totalIssues} issue(s) remaining.`);
+                                new Notice(`Document formatted, ${fixableIssueCount} issues fixed. ${validatedResult.totalIssues} issue(s) remaining.`);
 
-                                if (this.lintFixHandler.getFixableCount(recheckResult) > 0) {
+                                if (this.lintValidationService.getFixableCount(validatedResult) > 0) {
                                     setTimeout(() => {
-                                        new LintValidationDialog(this.app, recheckResult, async () => {
-                                            await this.lintFixHandler.recursiveFixWithCallback(
+                                        new LintValidationDialog(this.app, validatedResult, async () => {
+                                            await this.lintValidationService.applyAutofixesRecursively(
                                                 editor.getValue(),
-                                                recheckResult,
+                                                validatedResult,
                                                 editor,
-                                                (finalResult) => {
-                                                    this.updateLintStatus(finalResult);
+                                                (finalValidationResult) => {
+                                                    this.updateLintStatus(finalValidationResult);
                                                 }
                                             );
                                         }, this.settings.designSystem).open();
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 } else {
                                     setTimeout(() => {
-                                        new LintValidationDialog(this.app, recheckResult, async () => {}, this.settings.designSystem).open();
+                                        new LintValidationDialog(this.app, validatedResult, async () => {}, this.settings.designSystem).open();
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 }
                             }
                         } else {
-                            this.updateLintStatus(lintResult);
+                            this.updateLintStatus(lintValidationResult);
 
-                            if (lintResult.totalIssues === 0) {
+                            if (lintValidationResult.totalIssues === 0) {
                                 new Notice('Document formatted and no lint issues found!');
                             } else {
-                                new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
+                                new Notice(`Document formatted. ${lintValidationResult.totalIssues} lint issue(s) found (not auto-fixable).`);
                                 setTimeout(() => {
-                                    new LintValidationDialog(this.app, lintResult, async () => {}, this.settings.designSystem).open();
+                                    new LintValidationDialog(this.app, lintValidationResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
@@ -243,13 +243,13 @@ export default class LintAndFormatPlugin extends Plugin {
                         const cursor = editor.getCursor();
                         const scrollInfo = editor.getScrollInfo();
 
-                        const content = await this.app.vault.read(file);
-                        const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                        const currentMarkdownContent = await this.app.vault.read(file);
+                        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
-                        if (!result.error && result.formatted) {
+                        if (!formatOperationResult.error && formatOperationResult.formatted) {
                             const selections = editor.listSelections();
 
-                            await this.app.vault.modify(file, result.content);
+                            await this.app.vault.modify(file, formatOperationResult.content);
 
                             setTimeout(() => {
                                 editor.setCursor(cursor);
@@ -261,7 +261,7 @@ export default class LintAndFormatPlugin extends Plugin {
 
                                 this.updateFormatStatus('success');
                             }, this.settings.uiConfig.formatOnSaveDelay);
-                        } else if (result.error) {
+                        } else if (formatOperationResult.error) {
                             this.updateFormatStatus('error');
                         }
                     }
@@ -273,10 +273,10 @@ export default class LintAndFormatPlugin extends Plugin {
             this.app.workspace.on('active-leaf-change', async () => {
                 const view = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (view) {
-                    const content = view.editor.getValue();
+                    const currentMarkdownContent = view.editor.getValue();
                     if (this.settings.enableLinting) {
-                        const lintResult = await this.lintFixHandler.lintContent(content);
-                        this.updateLintStatus(lintResult);
+                        const lintValidationResult = await this.lintValidationService.lintContent(currentMarkdownContent);
+                        this.updateLintStatus(lintValidationResult);
                     }
                     this.updateFormatStatus('idle');
                 }
@@ -309,26 +309,26 @@ export default class LintAndFormatPlugin extends Plugin {
             return;
         }
 
-        const content = view.editor.getValue();
-        const result = await this.lintFixHandler.lintContent(content);
+        const currentMarkdownContent = view.editor.getValue();
+        const lintValidationResult = await this.lintValidationService.lintContent(currentMarkdownContent);
 
-        this.updateLintStatus(result);
+        this.updateLintStatus(lintValidationResult);
 
-        if (result.totalIssues === 0) {
+        if (lintValidationResult.totalIssues === 0) {
             new Notice('No lint issues found!');
             return;
         }
 
-        new LintValidationDialog(this.app, result, async () => {
-            await this.lintFixHandler.recursiveFixWithCallback(
-                content,
-                result,
+        new LintValidationDialog(this.app, lintValidationResult, async () => {
+            await this.lintValidationService.applyAutofixesRecursively(
+                currentMarkdownContent,
+                lintValidationResult,
                 view.editor,
-                (finalResult) => {
-                    this.updateLintStatus(finalResult);
-                    if (finalResult.totalIssues > 0) {
+                (finalValidationResult) => {
+                    this.updateLintStatus(finalValidationResult);
+                    if (finalValidationResult.totalIssues > 0) {
                         setTimeout(() => {
-                            new LintValidationDialog(this.app, finalResult, async () => {}, this.settings.designSystem).open();
+                            new LintValidationDialog(this.app, finalValidationResult, async () => {}, this.settings.designSystem).open();
                         }, this.settings.uiConfig.modalDisplayDelay);
                     }
                 }
@@ -348,17 +348,17 @@ export default class LintAndFormatPlugin extends Plugin {
             return;
         }
 
-        const content = view.editor.getValue();
-        const result = await formatMarkdown(content, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+        const currentMarkdownContent = view.editor.getValue();
+        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
 
-        if (result.error) {
-            new Notice(`Formatting error: ${result.error}`);
+        if (formatOperationResult.error) {
+            new Notice(`Formatting error: ${formatOperationResult.error}`);
             this.updateFormatStatus('error');
             return;
         }
 
-        if (result.formatted) {
-            view.editor.setValue(result.content);
+        if (formatOperationResult.formatted) {
+            view.editor.setValue(formatOperationResult.content);
             new Notice('Document formatted successfully!');
             this.updateFormatStatus('success');
         } else {
@@ -370,7 +370,7 @@ export default class LintAndFormatPlugin extends Plugin {
     updateLintStatus(lintResult: LintResult | null) {
         if (!this.lintStatusBarElement) return;
 
-        this.cachedLintValidationResult = lintResult;
+        this.currentDocumentLintStatus = lintResult;
         this.lintStatusBarElement.empty();
 
         if (!this.settings.enableLinting) {
@@ -401,7 +401,7 @@ export default class LintAndFormatPlugin extends Plugin {
     updateFormatStatus(formatOperationStatus: 'success' | 'error' | 'idle') {
         if (!this.formatStatusBarElement) return;
 
-        this.cachedFormatOperationStatus = formatOperationStatus;
+        this.currentDocumentFormatState = formatOperationStatus;
         this.formatStatusBarElement.empty();
 
         if (!this.settings.enableAutoFormat) {

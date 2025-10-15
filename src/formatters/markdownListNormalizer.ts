@@ -6,50 +6,50 @@ import type { LintRules } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 
 export async function normalizeMarkdownListStructure(
-    markdownContent: string,
+    documentContent: string,
     shouldTrimIntraListBlankLines: boolean,
-    userLintRules: LintRules,
+    lintRules: LintRules,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
-    const markdownProcessor = unified()
+    const unifiedMarkdownProcessor = unified()
         .use(remarkParse)
-        .use(() => (syntaxTree) => {
-            visit(syntaxTree, 'list', (listNode: any) => {
-                if (!listNode.children) return;
+        .use(() => (abstractSyntaxTree) => {
+            visit(abstractSyntaxTree, 'list', (list: any) => {
+                if (!list.children) return;
 
-                listNode.children.forEach((listItemNode: any, itemIndex: number) => {
-                    if (shouldTrimIntraListBlankLines && listItemNode.children) {
-                        listItemNode.children = listItemNode.children.filter((childNode: any) => {
-                            const isEmptyParagraph = childNode.type === 'paragraph' && !childNode.children?.length;
+                list.children.forEach((listItem: any, i: number) => {
+                    if (shouldTrimIntraListBlankLines && listItem.children) {
+                        listItem.children = listItem.children.filter((child: any) => {
+                            const isEmptyParagraph = child.type === 'paragraph' && !child.children?.length;
                             return !isEmptyParagraph;
                         });
                     }
 
-                    const isNotLastItem = itemIndex < listNode.children.length - 1;
-                    if (isNotLastItem) {
-                        delete listItemNode.spread;
+                    const hasMoreItems = i < list.children.length - 1;
+                    if (hasMoreItems) {
+                        delete listItem.spread;
                     }
                 });
 
-                if (listNode.spread === undefined) {
-                    listNode.spread = false;
+                if (list.spread === undefined) {
+                    list.spread = false;
                 }
             });
         })
         .use(remarkStringify, {
-            bullet: userLintRules.unorderedListStyle === 'asterisk' ? '*'
-                : userLintRules.unorderedListStyle === 'plus' ? '+'
+            bullet: lintRules.unorderedListStyle === 'asterisk' ? '*'
+                : lintRules.unorderedListStyle === 'plus' ? '+'
                 : '-',
             listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
-            incrementListMarker: userLintRules.orderedListStyle === 'ordered',
+            incrementListMarker: lintRules.orderedListStyle === 'ordered',
         });
 
-    const processingResult = await markdownProcessor.process(markdownContent);
-    return String(processingResult);
+    const transformationResult = await unifiedMarkdownProcessor.process(documentContent);
+    return String(transformationResult);
 }
 
-export function collapseConsecutiveBlankLines(markdownContent: string): string {
-    const consecutiveBlankLinesPattern = /\n{3,}/g;
-    const maximumTwoNewlines = '\n\n';
-    return markdownContent.replace(consecutiveBlankLinesPattern, maximumTwoNewlines);
+export function collapseConsecutiveBlankLines(documentContent: string): string {
+    const multipleBlankLinesPattern = /\n{3,}/g;
+    const doubleNewline = '\n\n';
+    return documentContent.replace(multipleBlankLinesPattern, doubleNewline);
 }

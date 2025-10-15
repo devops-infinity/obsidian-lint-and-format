@@ -5,51 +5,51 @@ import type { FormatResult, MarkdownPostProcessingConfig, LintRules } from '../c
 import { applyMarkdownPostProcessing } from './markdownPostProcessingPipeline';
 
 export async function formatMarkdown(
-    markdownContent: string,
+    documentContent: string,
     prettierConfig: PrettierMarkdownConfig,
-    userLintRules: LintRules,
+    lintRules: LintRules,
     postProcessingConfig?: MarkdownPostProcessingConfig
 ): Promise<FormatResult> {
     try {
-        let processedContent = markdownContent;
+        let workingContent = documentContent;
 
         if (postProcessingConfig) {
-            const postProcessingResult = await applyMarkdownPostProcessing(processedContent, postProcessingConfig, prettierConfig, userLintRules);
-            if (postProcessingResult.errorMessage) {
+            const postProcessingResult = await applyMarkdownPostProcessing(workingContent, postProcessingConfig, prettierConfig, lintRules);
+            if (postProcessingResult.error) {
                 return {
                     formatted: false,
-                    content: markdownContent,
-                    error: postProcessingResult.errorMessage,
+                    content: documentContent,
+                    error: postProcessingResult.error,
                 };
             }
-            processedContent = postProcessingResult.postProcessedMarkdownContent;
+            workingContent = postProcessingResult.processedContent;
         }
 
-        const formattedMarkdown = await prettier.format(processedContent, {
+        const formattedMarkdown = await prettier.format(workingContent, {
             ...prettierConfig,
             parser: 'markdown',
             plugins: [prettierPluginMarkdown],
         });
 
         return {
-            formatted: formattedMarkdown !== markdownContent,
+            formatted: formattedMarkdown !== documentContent,
             content: formattedMarkdown,
         };
     } catch (formatError) {
         return {
             formatted: false,
-            content: markdownContent,
+            content: documentContent,
             error: formatError instanceof Error ? formatError.message : 'Unknown formatting error',
         };
     }
 }
 
 export async function checkFormatting(
-    markdownContent: string,
+    documentContent: string,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<boolean> {
     try {
-        return await prettier.check(markdownContent, {
+        return await prettier.check(documentContent, {
             ...prettierConfig,
             parser: 'markdown',
             plugins: [prettierPluginMarkdown],

@@ -7,8 +7,8 @@ export class LintValidationService {
     constructor(
         private lintRules: LintRules,
         private prettierConfig: PrettierMarkdownConfig,
-        private recursiveFixDelay: number,
-        private maxAutoFixIterations: number,
+        private autofixRetryDelayMs: number,
+        private maxAutofixAttempts: number,
         private advancedConfig: LintAdvancedConfig
     ) {}
 
@@ -16,50 +16,50 @@ export class LintValidationService {
         return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig, this.advancedConfig);
     }
 
-    async fixAndRecheck(
+    async applyAutofixesAndValidate(
         markdownContent: string,
         lintResult: LintResult,
         editor: Editor
-    ): Promise<{ fixed: string; recheckResult: LintResult; fixedCount: number }> {
-        const fixedMarkdown = await fixLintIssues(
+    ): Promise<{ correctedMarkdown: string; validatedResult: LintResult; fixedIssueCount: number }> {
+        const correctedMarkdown = await fixLintIssues(
             markdownContent,
             lintResult.rawResult,
             this.lintRules.defaultCodeLanguage
         );
 
-        editor.setValue(fixedMarkdown);
+        editor.setValue(correctedMarkdown);
 
-        const recheckResult = await this.lintContent(fixedMarkdown);
+        const validatedResult = await this.lintContent(correctedMarkdown);
         const fixedIssueCount = lintResult.issues.filter(issue => issue.fixable).length;
 
-        return { fixed: fixedMarkdown, recheckResult, fixedCount: fixedIssueCount };
+        return { correctedMarkdown, validatedResult, fixedIssueCount };
     }
 
-    async recursiveFixWithCallback(
+    async applyAutofixesRecursively(
         markdownContent: string,
         lintResult: LintResult,
         editor: Editor,
         onComplete: (finalResult: LintResult) => void
     ): Promise<void> {
-        const { fixed: fixedMarkdown, recheckResult, fixedCount } = await this.fixAndRecheck(markdownContent, lintResult, editor);
+        const { correctedMarkdown, validatedResult, fixedIssueCount } = await this.applyAutofixesAndValidate(markdownContent, lintResult, editor);
 
-        if (recheckResult.totalIssues === 0) {
+        if (validatedResult.totalIssues === 0) {
             new Notice('All issues fixed successfully!');
-            onComplete(recheckResult);
+            onComplete(validatedResult);
         } else {
-            new Notice(`Fixed ${fixedCount} issue(s). ${recheckResult.totalIssues} issue(s) remaining.`);
+            new Notice(`Fixed ${fixedIssueCount} issue(s). ${validatedResult.totalIssues} issue(s) remaining.`);
 
-            if (recheckResult.issues.filter(issue => issue.fixable).length > 0) {
+            if (validatedResult.issues.filter(issue => issue.fixable).length > 0) {
                 setTimeout(async () => {
-                    await this.recursiveFixWithCallback(
-                        fixedMarkdown,
-                        recheckResult,
+                    await this.applyAutofixesRecursively(
+                        correctedMarkdown,
+                        validatedResult,
                         editor,
                         onComplete
                     );
-                }, this.recursiveFixDelay);
+                }, this.autofixRetryDelayMs);
             } else {
-                onComplete(recheckResult);
+                onComplete(validatedResult);
             }
         }
     }
@@ -76,32 +76,32 @@ export class LintValidationService {
         return lintResult.issues.filter(issue => issue.fixable).length;
     }
 
-    async silentAutoFix(markdownContent: string, editor: Editor): Promise<LintResult> {
-        let currentMarkdown = markdownContent;
+    async applyAutofixesQuietly(markdownContent: string, editor: Editor): Promise<LintResult> {
+        let workingMarkdownContent = markdownContent;
         let previousIssueCount = Infinity;
-        let iterationCount = 0;
+        let attemptNumber = 0;
 
-        while (iterationCount < this.maxAutoFixIterations) {
-            const lintResult = await this.lintContent(currentMarkdown);
-            const fixableIssueCount = this.getFixableCount(lintResult);
+        while (attemptNumber < this.maxAutofixAttempts) {
+            const lintValidationResult = await this.lintContent(workingMarkdownContent);
+            const fixableIssueCount = this.getFixableCount(lintValidationResult);
 
-            if (fixableIssueCount === 0 || lintResult.totalIssues >= previousIssueCount) {
-                return lintResult;
+            if (fixableIssueCount === 0 || lintValidationResult.totalIssues >= previousIssueCount) {
+                return lintValidationResult;
             }
 
-            previousIssueCount = lintResult.totalIssues;
+            previousIssueCount = lintValidationResult.totalIssues;
 
-            const fixedMarkdown = await fixLintIssues(
-                currentMarkdown,
-                lintResult.rawResult,
+            const correctedMarkdown = await fixLintIssues(
+                workingMarkdownContent,
+                lintValidationResult.rawResult,
                 this.lintRules.defaultCodeLanguage
             );
 
-            currentMarkdown = fixedMarkdown;
-            editor.setValue(fixedMarkdown);
-            iterationCount++;
+            workingMarkdownContent = correctedMarkdown;
+            editor.setValue(correctedMarkdown);
+            attemptNumber++;
         }
 
-        return await this.lintContent(currentMarkdown);
+        return await this.lintContent(workingMarkdownContent);
     }
 }

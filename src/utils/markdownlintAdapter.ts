@@ -118,7 +118,7 @@ export interface MarkdownlintConfig {
 }
 
 export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfig: PrettierMarkdownConfig, advancedConfig: LintAdvancedConfig): MarkdownlintConfig {
-    const config: MarkdownlintConfig = {
+    const markdownlintRuleConfiguration: MarkdownlintConfig = {
         default: true,
         MD001: rules.headingIncrement,
         MD003: { style: rules.headingStyle === 'consistent' ? 'consistent' : rules.headingStyle },
@@ -195,10 +195,10 @@ export function mapLintRulesToMarkdownlintConfig(rules: LintRules, prettierConfi
     };
 
     if (rules.noTrailingSpaces === false) {
-        config.MD009 = false;
+        markdownlintRuleConfiguration.MD009 = false;
     }
 
-    return config;
+    return markdownlintRuleConfiguration;
 }
 
 export async function lintMarkdownWithMarkdownlint(
@@ -276,45 +276,45 @@ export async function lintMarkdownWithMarkdownlint(
     }
 }
 
-export function fixOversizedFenceMarkers(markdownContent: string): string {
-    const contentLines = markdownContent.split('\n');
+export function normalizeCodeFenceMarkers(markdownContent: string): string {
+    const documentLines = markdownContent.split('\n');
 
-    for (let lineIndex = 0; lineIndex < contentLines.length; lineIndex++) {
-        const currentLine = contentLines[lineIndex];
+    for (let i = 0; i < documentLines.length; i++) {
+        const line = documentLines[i];
 
-        const backtickFenceMatch = currentLine.match(/^(`{4,})(.*)$/);
+        const backtickFenceMatch = line.match(/^(`{4,})(.*)$/);
         if (backtickFenceMatch) {
-            contentLines[lineIndex] = '```' + backtickFenceMatch[2];
+            documentLines[i] = '```' + backtickFenceMatch[2];
             continue;
         }
 
-        const tildeFenceMatch = currentLine.match(/^(~{4,})(.*)$/);
+        const tildeFenceMatch = line.match(/^(~{4,})(.*)$/);
         if (tildeFenceMatch) {
-            contentLines[lineIndex] = '~~~' + tildeFenceMatch[2];
+            documentLines[i] = '~~~' + tildeFenceMatch[2];
         }
     }
 
-    return contentLines.join('\n');
+    return documentLines.join('\n');
 }
 
 export function removeEmptyCodeBlocks(markdownContent: string): string {
-    const contentLines = markdownContent.split('\n');
+    const documentLines = markdownContent.split('\n');
     const emptyBlockRanges: { start: number; end: number }[] = [];
 
-    let currentLineIndex = 0;
-    while (currentLineIndex < contentLines.length) {
-        const currentLine = contentLines[currentLineIndex];
+    let i = 0;
+    while (i < documentLines.length) {
+        const line = documentLines[i];
 
-        const openingFenceMatch = currentLine.match(/^(```|~~~)/);
+        const openingFenceMatch = line.match(/^(```|~~~)/);
 
         if (openingFenceMatch) {
             const fenceCharacter = openingFenceMatch[1][0];
-            let searchIndex = currentLineIndex + 1;
-            let blockHasContent = false;
+            let searchIndex = i + 1;
+            let hasContent = false;
             let closingFenceIndex = -1;
 
-            while (searchIndex < contentLines.length) {
-                const searchLine = contentLines[searchIndex];
+            while (searchIndex < documentLines.length) {
+                const searchLine = documentLines[searchIndex];
 
                 const closingFenceMatch = searchLine.match(new RegExp(`^${fenceCharacter}{3,}\\s*$`));
 
@@ -324,56 +324,56 @@ export function removeEmptyCodeBlocks(markdownContent: string): string {
                 }
 
                 if (searchLine.trim().length > 0) {
-                    blockHasContent = true;
+                    hasContent = true;
                 }
 
                 searchIndex++;
             }
 
-            if (closingFenceIndex !== -1 && !blockHasContent) {
-                emptyBlockRanges.push({ start: currentLineIndex, end: closingFenceIndex });
-                currentLineIndex = closingFenceIndex + 1;
+            if (closingFenceIndex !== -1 && !hasContent) {
+                emptyBlockRanges.push({ start: i, end: closingFenceIndex });
+                i = closingFenceIndex + 1;
                 continue;
             }
         }
 
-        currentLineIndex++;
+        i++;
     }
 
     for (let rangeIndex = emptyBlockRanges.length - 1; rangeIndex >= 0; rangeIndex--) {
         const blockRange = emptyBlockRanges[rangeIndex];
-        contentLines.splice(blockRange.start, blockRange.end - blockRange.start + 1);
+        documentLines.splice(blockRange.start, blockRange.end - blockRange.start + 1);
     }
 
-    return contentLines.join('\n');
+    return documentLines.join('\n');
 }
 
-export function fixMD040Violations(markdownContent: string, rawLintResult: any, defaultCodeLanguage: string): string {
+export function addMissingCodeLanguageTags(markdownContent: string, rawLintResult: any, defaultCodeLanguage: string): string {
     if (!rawLintResult || !Array.isArray(rawLintResult)) {
         return markdownContent;
     }
 
-    const md040ViolationErrors = rawLintResult.filter((lintError: any) => lintError.ruleNames && lintError.ruleNames.includes('MD040'));
+    const languageViolations = rawLintResult.filter((lintError: any) => lintError.ruleNames && lintError.ruleNames.includes('MD040'));
 
-    if (md040ViolationErrors.length === 0) {
+    if (languageViolations.length === 0) {
         return markdownContent;
     }
 
-    const contentLines = markdownContent.split('\n');
+    const documentLines = markdownContent.split('\n');
 
-    for (const violationError of md040ViolationErrors.reverse()) {
-        const violationLineIndex = violationError.lineNumber - 1;
-        if (violationLineIndex < 0 || violationLineIndex >= contentLines.length) continue;
+    for (const violation of languageViolations.reverse()) {
+        const lineIndex = violation.lineNumber - 1;
+        if (lineIndex < 0 || lineIndex >= documentLines.length) continue;
 
-        const violationLine = contentLines[violationLineIndex];
-        if (violationLine.match(/^```\s*$/)) {
-            contentLines[violationLineIndex] = '```' + defaultCodeLanguage;
-        } else if (violationLine.match(/^~~~\s*$/)) {
-            contentLines[violationLineIndex] = '~~~' + defaultCodeLanguage;
+        const line = documentLines[lineIndex];
+        if (line.match(/^```\s*$/)) {
+            documentLines[lineIndex] = '```' + defaultCodeLanguage;
+        } else if (line.match(/^~~~\s*$/)) {
+            documentLines[lineIndex] = '~~~' + defaultCodeLanguage;
         }
     }
 
-    return contentLines.join('\n');
+    return documentLines.join('\n');
 }
 
 export async function fixLintIssuesWithMarkdownlint(markdownContent: string, rawLintResult: any, defaultCodeLanguage: string = 'text'): Promise<string> {
@@ -381,13 +381,13 @@ export async function fixLintIssuesWithMarkdownlint(markdownContent: string, raw
         const { applyFixes } = await import('markdownlint');
 
         if (rawLintResult && Array.isArray(rawLintResult)) {
-            let fixedMarkdown = applyFixes(markdownContent, rawLintResult);
+            let correctedMarkdown = applyFixes(markdownContent, rawLintResult);
 
-            fixedMarkdown = fixMD040Violations(fixedMarkdown, rawLintResult, defaultCodeLanguage);
-            fixedMarkdown = fixOversizedFenceMarkers(fixedMarkdown);
-            fixedMarkdown = removeEmptyCodeBlocks(fixedMarkdown);
+            correctedMarkdown = addMissingCodeLanguageTags(correctedMarkdown, rawLintResult, defaultCodeLanguage);
+            correctedMarkdown = normalizeCodeFenceMarkers(correctedMarkdown);
+            correctedMarkdown = removeEmptyCodeBlocks(correctedMarkdown);
 
-            return fixedMarkdown;
+            return correctedMarkdown;
         }
 
         return markdownContent;
