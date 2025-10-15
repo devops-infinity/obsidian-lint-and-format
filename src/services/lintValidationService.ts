@@ -3,7 +3,7 @@ import type { LintResult, LintRules, LintAdvancedConfig } from '../core/interfac
 import { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from '../utils/markdownlintAdapter';
 
-export class LintFixHandler {
+export class LintValidationService {
     constructor(
         private lintRules: LintRules,
         private prettierConfig: PrettierMarkdownConfig,

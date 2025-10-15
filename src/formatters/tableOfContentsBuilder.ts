@@ -5,6 +5,7 @@ import remarkToc from 'remark-toc';
 import remarkGfm from 'remark-gfm';
 import type { LintRules } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
+import { extractFrontMatter, reconstructWithFrontMatter, validateYAMLFrontMatter } from '../parsers/yamlFrontMatterParser';
 
 export async function buildTableOfContentsInMarkdown(
     markdownContent: string,
@@ -13,18 +14,21 @@ export async function buildTableOfContentsInMarkdown(
     userLintRules: LintRules,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
-    const yamlFrontmatterMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n/);
-    const extractedFrontmatter = yamlFrontmatterMatch ? yamlFrontmatterMatch[0] : '';
-    const markdownBodyWithoutFrontmatter = extractedFrontmatter
-        ? markdownContent.slice(extractedFrontmatter.length)
-        : markdownContent;
+    const { frontMatter, body: markdownBodyWithoutFrontmatter, hasFrontMatter } = extractFrontMatter(markdownContent);
+
+    if (hasFrontMatter && frontMatter) {
+        const validation = validateYAMLFrontMatter(frontMatter);
+        if (!validation.valid) {
+            return markdownContent;
+        }
+    }
 
     const tocHeadingAlreadyExists = /^##?\s+table\s+of\s+contents/im.test(markdownBodyWithoutFrontmatter);
 
     let contentPreparedForTocGeneration = markdownBodyWithoutFrontmatter;
     if (!tocHeadingAlreadyExists) {
         const tocHeading = '## Table of Contents\n\n';
-        const shouldInsertAtTop = insertionPosition === 'top' && !extractedFrontmatter;
+        const shouldInsertAtTop = insertionPosition === 'top' && !hasFrontMatter;
 
         if (shouldInsertAtTop || insertionPosition === 'after-frontmatter') {
             contentPreparedForTocGeneration = tocHeading + markdownBodyWithoutFrontmatter;
@@ -55,21 +59,24 @@ export async function buildTableOfContentsInMarkdown(
         const processingResult = await remarkProcessor.process(contentPreparedForTocGeneration);
         const markdownWithGeneratedToc = String(processingResult);
 
-        return extractedFrontmatter + markdownWithGeneratedToc;
+        return reconstructWithFrontMatter(frontMatter, markdownWithGeneratedToc);
     } catch (tocGenerationError) {
         return markdownContent;
     }
 }
 
 export function removeExistingTableOfContents(markdownContent: string): string {
-    const yamlFrontmatterMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n/);
-    const extractedFrontmatter = yamlFrontmatterMatch ? yamlFrontmatterMatch[0] : '';
-    const markdownBodyWithoutFrontmatter = extractedFrontmatter
-        ? markdownContent.slice(extractedFrontmatter.length)
-        : markdownContent;
+    const { frontMatter, body: markdownBodyWithoutFrontmatter, hasFrontMatter } = extractFrontMatter(markdownContent);
+
+    if (hasFrontMatter && frontMatter) {
+        const validation = validateYAMLFrontMatter(frontMatter);
+        if (!validation.valid) {
+            return markdownContent;
+        }
+    }
 
     const tocSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?)+/im;
     const markdownWithTocRemoved = markdownBodyWithoutFrontmatter.replace(tocSectionPattern, '');
 
-    return extractedFrontmatter + markdownWithTocRemoved;
+    return reconstructWithFrontMatter(frontMatter, markdownWithTocRemoved);
 }

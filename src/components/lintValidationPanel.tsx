@@ -2,13 +2,13 @@ import type { LintResult, DesignSystem } from '../core/interfaces';
 import { colors, createStyles as createStylesFactory, spacing, borderRadius, getFontSize } from '../utils/designTokens';
 import { getSeverityColor, getSeverityIcon, getSuccessIcon } from '../utils/severityHelpers';
 
-interface LintResultsModalProps {
+interface LintValidationPanelProps {
     result: LintResult;
     onFix: () => void | Promise<void>;
     designSystem: DesignSystem;
 }
 
-export function LintResultsModal({ result: lintResult, onFix, designSystem }: LintResultsModalProps) {
+export function LintValidationPanel({ result: lintResult, onFix, designSystem }: LintValidationPanelProps) {
     const hasFixableIssues = lintResult.issues.some((issue) => issue.fixable);
     const styles = createStylesFactory(designSystem);
     const fontSize = getFontSize(designSystem);

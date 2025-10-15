@@ -1,9 +1,9 @@
 import { App, Modal } from 'obsidian';
 import { Root, createRoot } from 'react-dom/client';
 import type { LintResult, DesignSystem } from '../core/interfaces';
-import { LintResultsModal } from './LintResultsModal';
+import { LintValidationPanel } from './lintValidationPanel';
 
-export class LintResultsModalWrapper extends Modal {
+export class LintValidationDialog extends Modal {
     private reactRoot: Root | null = null;
     private lintResult: LintResult;
     private fixHandler: () => void | Promise<void>;
@@ -22,7 +22,7 @@ export class LintResultsModalWrapper extends Modal {
 
         this.reactRoot = createRoot(contentEl);
         this.reactRoot.render(
-            <LintResultsModal
+            <LintValidationPanel
                 result={this.lintResult}
                 onFix={async () => {
                     await this.fixHandler();

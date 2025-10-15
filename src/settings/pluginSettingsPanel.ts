@@ -20,11 +20,11 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'Lint & Format Settings' });
 
         new Setting(containerEl)
-            .setName('Reset to Default Settings')
-            .setDesc('Restore all settings to factory defaults. This action cannot be undone.')
+            .setName('Reset Settings')
+            .setDesc('Restore all settings to their original defaults')
             .addButton((button) =>
                 button
-                    .setButtonText('Reset All Settings')
+                    .setButtonText('Reset All')
                     .setWarning()
                     .onClick(async () => {
                         const confirmed = await this.confirmReset();
@@ -52,8 +52,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             .setHeading();
 
         new Setting(containerEl)
-            .setName('Enable auto-formatting')
-            .setDesc('Allow the plugin to format documents using Prettier')
+            .setName('Enable automatic formatting')
+            .setDesc('Automatically clean up and organize your document structure')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.enableAutoFormat).onChange(async (value) => {
                     this.plugin.settings.enableAutoFormat = value;
@@ -63,8 +63,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Enable linting')
-            .setDesc('Allow the plugin to analyze and report markdown style issues')
+            .setName('Enable document checking')
+            .setDesc('Check your documents for consistency and style improvements')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.enableLinting).onChange(async (value) => {
                     this.plugin.settings.enableLinting = value;
@@ -75,7 +75,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Format on save')
-            .setDesc('Automatically format documents when saving (requires reload)')
+            .setDesc('Apply formatting automatically when you save (requires reload)')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.formatOnSave).onChange(async (value) => {
                     this.plugin.settings.formatOnSave = value;
@@ -85,8 +85,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Show lint errors')
-            .setDesc('Display notification messages for lint errors')
+            .setName('Show improvement suggestions')
+            .setDesc('Display notifications when issues are found in your documents')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.showLintErrors).onChange(async (value) => {
                     this.plugin.settings.showLintErrors = value;
@@ -95,8 +95,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Auto-fix lint issues')
-            .setDesc('Automatically fix all fixable lint issues without showing modal. When enabled, formatting and linting will silently fix all auto-fixable issues. You can still manually open the lint modal to review issues.')
+            .setName('Auto-fix issues')
+            .setDesc('Silently fix fixable issues without confirmation')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.autoFixLintIssues).onChange(async (value) => {
                     this.plugin.settings.autoFixLintIssues = value;
@@ -107,17 +107,17 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addPostProcessingFeatures(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Markdown Post-Processing')
+            .setName('Advanced Features')
             .setHeading();
 
         containerEl.createEl('p', {
-            text: 'Advanced transformations applied after Prettier formatting: list normalization, code block formatting, table of contents generation, and blank line removal.',
+            text: 'Additional improvements applied after formatting, including list cleanup, code formatting, and table of contents.',
             cls: 'setting-item-description'
         });
 
         new Setting(containerEl)
-            .setName('Fix list spacing')
-            .setDesc('Fix extra empty lines in ordered and unordered lists, ensure consistent spacing between list items')
+            .setName('Clean up lists')
+            .setDesc('Remove extra empty lines and ensure consistent spacing in lists')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.postProcessingConfig.enableListFormatting).onChange(async (value) => {
                     this.plugin.settings.postProcessingConfig.enableListFormatting = value;
@@ -127,7 +127,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Trim lines in lists')
-            .setDesc('Remove unnecessary empty lines within list items for cleaner formatting')
+            .setDesc('Remove unnecessary blank lines within list items')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.postProcessingConfig.enableLineTrimmingInLists).onChange(async (value) => {
                     this.plugin.settings.postProcessingConfig.enableLineTrimmingInLists = value;
@@ -137,7 +137,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Remove extra blank lines')
-            .setDesc('Reduce multiple consecutive blank lines down to a maximum of one throughout the document')
+            .setDesc('Limit consecutive blank lines to a maximum of one')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.postProcessingConfig.removeDuplicateBlankLines).onChange(async (value) => {
                     this.plugin.settings.postProcessingConfig.removeDuplicateBlankLines = value;
@@ -146,8 +146,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Format code in code blocks')
-            .setDesc('Automatically format code within fenced code blocks using Prettier (supports JavaScript, TypeScript, Python, JSON, YAML, CSS, HTML, Bash/Shell, and more)')
+            .setName('Format code blocks')
+            .setDesc('Automatically format code inside code blocks')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.postProcessingConfig.enableCodeBlockFormatting).onChange(async (value) => {
                     this.plugin.settings.postProcessingConfig.enableCodeBlockFormatting = value;
@@ -156,8 +156,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Code block languages to format')
-            .setDesc('Comma-separated list of programming languages to format in code blocks (e.g., javascript,python,json,yaml,css,bash,shell,typescript,html,scss)')
+            .setName('Languages to format')
+            .setDesc('Comma-separated list of languages (e.g., javascript, python, json, yaml)')
             .addText((text) =>
                 text
                     .setPlaceholder('javascript,python,json,yaml,css,bash')
@@ -170,8 +170,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Generate table of contents')
-            .setDesc('Automatically generate or update a table of contents based on document headings')
+            .setName('Table of contents')
+            .setDesc('Automatically create and update a table of contents')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.postProcessingConfig.enableTocGeneration).onChange(async (value) => {
                     this.plugin.settings.postProcessingConfig.enableTocGeneration = value;
@@ -180,8 +180,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Table of contents depth')
-            .setDesc('Maximum heading level to include in the table of contents (1-6, where 1 is H1, 6 is H6)')
+            .setName('Contents depth')
+            .setDesc('How many heading levels to include (1-6)')
             .addText((text) =>
                 text
                     .setPlaceholder('3')
@@ -196,11 +196,11 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Table of contents position')
-            .setDesc('Choose where to place the generated table of contents in your document')
+            .setName('Contents position')
+            .setDesc('Where to place the table of contents')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('after-frontmatter', 'After YAML front matter')
+                    .addOption('after-frontmatter', 'After front matter')
                     .addOption('top', 'Top of document')
                     .setValue(this.plugin.settings.postProcessingConfig.tocPosition)
                     .onChange(async (value) => {
@@ -212,12 +212,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addFormatSettings(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Format Settings (Prettier)')
+            .setName('Formatting Preferences')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('Print width')
-            .setDesc('Maximum line length before wrapping. Set to 0 for no line length restriction (default - ideal for stories, documents, creative writing). Common values: 80 (Prettier standard), 100 (relaxed), 120 (wide). This setting also controls the linter\'s line length rule (MD013). When set to 0, MD013 is disabled.')
+            .setName('Maximum line width')
+            .setDesc('Maximum line length before wrapping. Set to 0 for unlimited (recommended for notes). Common values: 80, 100, or 120.')
             .addText((text) =>
                 text
                     .setPlaceholder('0')
@@ -232,8 +232,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Tab width')
-            .setDesc('Number of spaces per indentation level. This setting also controls list indentation in the linter (MD007).')
+            .setName('Indentation size')
+            .setDesc('Number of spaces per indentation level')
             .addText((text) =>
                 text
                     .setPlaceholder('2')
@@ -249,7 +249,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Use tabs')
-            .setDesc('Use tabs instead of spaces for indentation. This setting also controls hard tab detection in the linter (MD010).')
+            .setDesc('Use tabs instead of spaces for indentation')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.prettierConfig.useTabs).onChange(async (value) => {
                     this.plugin.settings.prettierConfig.useTabs = value;
@@ -258,13 +258,13 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Prose wrap')
-            .setDesc('How to wrap text: preserve (recommended for notes - respects your formatting), always (enforces print width), never (soft wrap only)')
+            .setName('Text wrapping')
+            .setDesc('How to wrap long lines of text')
             .addDropdown((dropdown) =>
                 dropdown
+                    .addOption('preserve', 'Preserve (recommended)')
                     .addOption('always', 'Always wrap')
                     .addOption('never', 'Never wrap')
-                    .addOption('preserve', 'Preserve wrapping')
                     .setValue(this.plugin.settings.prettierConfig.proseWrap)
                     .onChange(async (value) => {
                         this.plugin.settings.prettierConfig.proseWrap = value as any;
@@ -273,13 +273,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('End of line')
-            .setDesc('Line ending format for files')
+            .setName('Line endings')
+            .setDesc('Line ending format for your files')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('lf', 'LF (Unix/Mac)')
-                    .addOption('crlf', 'CRLF (Windows)')
-                    .addOption('cr', 'CR (Legacy Mac)')
+                    .addOption('lf', 'Unix/Mac')
+                    .addOption('crlf', 'Windows')
                     .addOption('auto', 'Auto')
                     .setValue(this.plugin.settings.prettierConfig.endOfLine)
                     .onChange(async (value) => {
@@ -291,12 +290,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addLintRulesStructure(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Lint Rules: Structure')
+            .setName('Document Structure')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('Heading increment (MD001)')
-            .setDesc('Heading levels should only increment by one level at a time (e.g., # then ##, not # then ###)')
+            .setName('Sequential headings')
+            .setDesc('Headings should increase by one level at a time')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.headingIncrement).onChange(async (value) => {
                     this.plugin.settings.lintRules.headingIncrement = value;
@@ -305,8 +304,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('No duplicate headings (MD024)')
-            .setDesc('Multiple headings with the same content are not allowed')
+            .setName('Unique headings')
+            .setDesc('Avoid using the same heading text multiple times')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.noDuplicateHeadings).onChange(async (value) => {
                     this.plugin.settings.lintRules.noDuplicateHeadings = value;
@@ -315,8 +314,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Single H1 (MD025)')
-            .setDesc('Only one top-level heading allowed per document')
+            .setName('Single main heading')
+            .setDesc('Use only one top-level heading per document')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.singleH1).onChange(async (value) => {
                     this.plugin.settings.lintRules.singleH1 = value;
@@ -325,8 +324,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('No trailing punctuation in heading (MD026)')
-            .setDesc('Headings should not end with punctuation')
+            .setName('Clean headings')
+            .setDesc('Headings should not end with punctuation marks')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.noTrailingPunctuationInHeading).onChange(async (value) => {
                     this.plugin.settings.lintRules.noTrailingPunctuationInHeading = value;
@@ -335,8 +334,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('First line H1 (MD041)')
-            .setDesc('First line in a file should be a top-level heading')
+            .setName('Start with main heading')
+            .setDesc('Document should begin with a top-level heading')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.firstLineH1).onChange(async (value) => {
                     this.plugin.settings.lintRules.firstLineH1 = value;
@@ -345,8 +344,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Files end with newline (MD047)')
-            .setDesc('Files should end with a single newline character')
+            .setName('End with newline')
+            .setDesc('Files should end with a single blank line')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.filesEndWithNewline).onChange(async (value) => {
                     this.plugin.settings.lintRules.filesEndWithNewline = value;
@@ -357,12 +356,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addLintRulesLists(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Lint Rules: Lists')
+            .setName('List Formatting')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('Unordered list style (MD004)')
-            .setDesc('Enforce consistent marker for unordered lists')
+            .setName('Bullet style')
+            .setDesc('Preferred marker for unordered lists')
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption('asterisk', 'Asterisk (*)')
@@ -377,13 +376,13 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Ordered list style (MD029)')
-            .setDesc('Ordered list item prefix style')
+            .setName('Numbered list style')
+            .setDesc('How to number ordered lists')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('one', 'All 1s (1. 1. 1.)')
                     .addOption('ordered', 'Sequential (1. 2. 3.)')
-                    .addOption('one_or_ordered', 'One or Ordered')
+                    .addOption('one', 'All ones (1. 1. 1.)')
+                    .addOption('one_or_ordered', 'Either style')
                     .setValue(this.plugin.settings.lintRules.orderedListStyle)
                     .onChange(async (value) => {
                         this.plugin.settings.lintRules.orderedListStyle = value as any;
@@ -392,8 +391,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('List marker spacing (MD030)')
-            .setDesc('Spaces after list markers should be consistent')
+            .setName('Consistent spacing')
+            .setDesc('Ensure consistent spacing after list markers')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.listMarkerSpace).onChange(async (value) => {
                     this.plugin.settings.lintRules.listMarkerSpace = value;
@@ -402,8 +401,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Blank lines around lists (MD032)')
-            .setDesc('Lists should be surrounded by blank lines')
+            .setName('Space around lists')
+            .setDesc('Add blank lines before and after lists')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundLists).onChange(async (value) => {
                     this.plugin.settings.lintRules.blankLinesAroundLists = value;
@@ -414,12 +413,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addLintRulesCodeBlocks(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Lint Rules: Code Blocks')
+            .setName('Code Block Formatting')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('Blank lines around code blocks (MD031)')
-            .setDesc('Fenced code blocks should be surrounded by blank lines')
+            .setName('Space around code blocks')
+            .setDesc('Add blank lines before and after code blocks')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.blankLinesAroundFences).onChange(async (value) => {
                     this.plugin.settings.lintRules.blankLinesAroundFences = value;
@@ -428,12 +427,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Code block style (MD046)')
-            .setDesc('Preferred code block style')
+            .setName('Code block style')
+            .setDesc('Preferred way to format code blocks')
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption('fenced', 'Fenced (```)')
-                    .addOption('indented', 'Indented (4 spaces)')
+                    .addOption('indented', 'Indented')
                     .addOption('consistent', 'Consistent')
                     .setValue(this.plugin.settings.lintRules.codeBlockStyle)
                     .onChange(async (value) => {
@@ -443,8 +442,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Code fence style (MD048)')
-            .setDesc('Preferred code fence character')
+            .setName('Fence character')
+            .setDesc('Preferred character for code fences')
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption('backtick', 'Backtick (```)')
@@ -460,12 +459,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addLintRulesLinksImages(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Lint Rules: Links & Images')
+            .setName('Links & Images')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('No bare URLs (MD034)')
-            .setDesc('Bare URLs should be enclosed in angle brackets or formatted as links')
+            .setName('Format URLs properly')
+            .setDesc('URLs should be properly formatted as links')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.noBareUrls).onChange(async (value) => {
                     this.plugin.settings.lintRules.noBareUrls = value;
@@ -474,8 +473,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Require image alt text (MD045)')
-            .setDesc('Images should have alternate text (alt text) for accessibility')
+            .setName('Image descriptions')
+            .setDesc('Require descriptive text for images')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.noAltText).onChange(async (value) => {
                     this.plugin.settings.lintRules.noAltText = value;
@@ -486,12 +485,12 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addLintRulesSpacing(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Lint Rules: Spacing')
+            .setName('Spacing & Whitespace')
             .setHeading();
 
         new Setting(containerEl)
-            .setName('No trailing spaces')
-            .setDesc('Warn about trailing spaces at the end of lines')
+            .setName('Remove trailing spaces')
+            .setDesc('Remove extra spaces at the end of lines')
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.lintRules.noTrailingSpaces).onChange(async (value) => {
                     this.plugin.settings.lintRules.noTrailingSpaces = value;
@@ -500,8 +499,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('No multiple blank lines')
-            .setDesc('Warn about multiple consecutive blank lines')
+            .setName('Limit blank lines')
+            .setDesc('Avoid multiple consecutive blank lines')
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.lintRules.noMultipleBlankLines)
@@ -512,8 +511,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Require blank line before heading')
-            .setDesc('Require a blank line before headings')
+            .setName('Space before headings')
+            .setDesc('Add a blank line before headings')
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.lintRules.requireBlankLineBeforeHeading)
@@ -524,8 +523,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Require blank line after heading')
-            .setDesc('Require a blank line after headings')
+            .setName('Space after headings')
+            .setDesc('Add a blank line after headings')
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.lintRules.requireBlankLineAfterHeading)
@@ -538,16 +537,16 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
     private addStylePreferences(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Style Preferences')
+            .setName('Text Styling')
             .setHeading();
 
         new Setting(containerEl)
             .setName('Heading style')
-            .setDesc('Preferred markdown heading style')
+            .setDesc('How to format headings')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('atx', 'ATX (# Heading)')
-                    .addOption('setext', 'Setext (Underline)')
+                    .addOption('atx', 'Hash marks (#)')
+                    .addOption('setext', 'Underline')
                     .addOption('consistent', 'Consistent')
                     .setValue(this.plugin.settings.lintRules.headingStyle)
                     .onChange(async (value) => {
@@ -557,11 +556,11 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Emphasis marker')
-            .setDesc('Italic/emphasis text style (default: consistent - matches first occurrence). Options: * (asterisk), _ (underscore), or consistent.')
+            .setName('Italic style')
+            .setDesc('How to format italic text')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('consistent', 'Consistent (default)')
+                    .addOption('consistent', 'Consistent')
                     .addOption('*', 'Asterisk (*)')
                     .addOption('_', 'Underscore (_)')
                     .setValue(this.plugin.settings.lintRules.emphasisMarker)
@@ -572,13 +571,13 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Strong marker')
-            .setDesc('Bold/strong text style (default: consistent - matches first occurrence). Options: ** (double asterisk), __ (double underscore), or consistent.')
+            .setName('Bold style')
+            .setDesc('How to format bold text')
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption('consistent', 'Consistent (default)')
-                    .addOption('**', 'Double Asterisk (**)')
-                    .addOption('__', 'Double Underscore (__)')
+                    .addOption('consistent', 'Consistent')
+                    .addOption('**', 'Double asterisk (**)')
+                    .addOption('__', 'Double underscore (__)')
                     .setValue(this.plugin.settings.lintRules.strongMarker)
                     .onChange(async (value) => {
                         this.plugin.settings.lintRules.strongMarker = value as any;
@@ -587,8 +586,8 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Default code block language')
-            .setDesc('Default language for fenced code blocks without language specified (for MD040 auto-fix). Comprehensive list of 200+ languages based on GitHub Linguist, highlight.js, and Prism.js.')
+            .setName('Default code language')
+            .setDesc('Default programming language for code blocks')
             .addDropdown((dropdown) => {
                 LANGUAGE_DROPDOWN_OPTIONS.forEach(option => {
                     dropdown.addOption(option.value, option.label);
@@ -612,7 +611,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             })
             .addText((text) =>
                 text
-                    .setPlaceholder('Enter any language identifier (e.g., ebnf, fift, wgsl)')
+                    .setPlaceholder('Enter custom language')
                     .setValue(
                         COMPREHENSIVE_LANGUAGES.includes(this.plugin.settings.lintRules.defaultCodeLanguage)
                             ? ''
@@ -677,16 +676,16 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
     async confirmReset(): Promise<boolean> {
         return new Promise((resolve) => {
             const modal = new Modal(this.app);
-            modal.titleEl.setText('Reset to Default Settings');
+            modal.titleEl.setText('Reset All Settings');
 
             modal.contentEl.createEl('p', {
-                text: 'Are you sure you want to reset all settings to factory defaults? This will:'
+                text: 'This will restore all settings to their original defaults:'
             });
 
             const list = modal.contentEl.createEl('ul');
-            list.createEl('li', { text: 'Reset all formatting settings (Prettier config)' });
-            list.createEl('li', { text: 'Reset all linting rules' });
-            list.createEl('li', { text: 'Reset general plugin preferences' });
+            list.createEl('li', { text: 'Formatting preferences' });
+            list.createEl('li', { text: 'Document checking rules' });
+            list.createEl('li', { text: 'All other preferences' });
 
             modal.contentEl.createEl('p', {
                 text: 'This action cannot be undone.',
@@ -706,7 +705,7 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             });
 
             const resetButton = buttonContainer.createEl('button', {
-                text: 'Reset to Defaults',
+                text: 'Reset Settings',
                 cls: 'mod-warning'
             });
             resetButton.addEventListener('click', () => {
@@ -727,6 +726,6 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
 
         this.display();
 
-        new Notice('Settings reset to factory defaults successfully!');
+        new Notice('Settings have been reset successfully!');
     }
 }

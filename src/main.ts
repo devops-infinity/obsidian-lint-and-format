@@ -3,9 +3,9 @@ import type { PluginSettings, LintResult } from './core/interfaces';
 import { DEFAULT_SETTINGS } from './pluginSettingsDefaults';
 import { formatMarkdown } from './formatters/markdownFormatter';
 import { registerHeroicons } from './utils/heroicons';
-import { LintResultsModalWrapper } from './components/LintResultsModalWrapper';
-import { LintAndFormatSettingTab } from './settings/LintAndFormatSettingTab';
-import { LintFixHandler } from './services/LintFixHandler';
+import { LintValidationDialog } from './components/lintValidationDialog';
+import { LintAndFormatSettingTab } from './settings/pluginSettingsPanel';
+import { LintValidationService } from './services/lintValidationService';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
@@ -13,12 +13,12 @@ export default class LintAndFormatPlugin extends Plugin {
     private formatStatusBarElement: HTMLElement | null = null;
     private cachedLintValidationResult: LintResult | null = null;
     private cachedFormatOperationStatus: 'success' | 'error' | 'idle' = 'idle';
-    private lintFixHandler: LintFixHandler;
+    private lintFixHandler: LintValidationService;
 
     async onload() {
         await this.loadSettings();
 
-        this.lintFixHandler = new LintFixHandler(
+        this.lintFixHandler = new LintValidationService(
             this.settings.lintRules,
             this.settings.prettierConfig,
             this.settings.uiConfig.modalDisplayDelay,
@@ -86,7 +86,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 this.updateLintStatus(result);
                 this.lintFixHandler.showLintSummary(result, this.settings.showLintErrors);
 
-                new LintResultsModalWrapper(this.app, result, async () => {
+                new LintValidationDialog(this.app, result, async () => {
                     await this.lintFixHandler.recursiveFixWithCallback(
                         content,
                         result,
@@ -95,7 +95,7 @@ export default class LintAndFormatPlugin extends Plugin {
                             this.updateLintStatus(finalResult);
                             if (finalResult.totalIssues > 0) {
                                 setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, finalResult, async () => {}, this.settings.designSystem).open();
+                                    new LintValidationDialog(this.app, finalResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
@@ -186,7 +186,7 @@ export default class LintAndFormatPlugin extends Plugin {
 
                                 if (this.lintFixHandler.getFixableCount(recheckResult) > 0) {
                                     setTimeout(() => {
-                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {
+                                        new LintValidationDialog(this.app, recheckResult, async () => {
                                             await this.lintFixHandler.recursiveFixWithCallback(
                                                 editor.getValue(),
                                                 recheckResult,
@@ -199,7 +199,7 @@ export default class LintAndFormatPlugin extends Plugin {
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 } else {
                                     setTimeout(() => {
-                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {}, this.settings.designSystem).open();
+                                        new LintValidationDialog(this.app, recheckResult, async () => {}, this.settings.designSystem).open();
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 }
                             }
@@ -211,7 +211,7 @@ export default class LintAndFormatPlugin extends Plugin {
                             } else {
                                 new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
                                 setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, lintResult, async () => {}, this.settings.designSystem).open();
+                                    new LintValidationDialog(this.app, lintResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
@@ -319,7 +319,7 @@ export default class LintAndFormatPlugin extends Plugin {
             return;
         }
 
-        new LintResultsModalWrapper(this.app, result, async () => {
+        new LintValidationDialog(this.app, result, async () => {
             await this.lintFixHandler.recursiveFixWithCallback(
                 content,
                 result,
@@ -328,7 +328,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     this.updateLintStatus(finalResult);
                     if (finalResult.totalIssues > 0) {
                         setTimeout(() => {
-                            new LintResultsModalWrapper(this.app, finalResult, async () => {}, this.settings.designSystem).open();
+                            new LintValidationDialog(this.app, finalResult, async () => {}, this.settings.designSystem).open();
                         }, this.settings.uiConfig.modalDisplayDelay);
                     }
                 }
