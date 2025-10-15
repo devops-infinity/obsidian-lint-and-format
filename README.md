@@ -2,7 +2,58 @@
 
 Keep your Obsidian notes clean and consistent with professional markdown linting and formatting.
 
-## Why Use This Plugin?
+## Table of Contents
+
+- [Lint \& Format for Obsidian](#lint--format-for-obsidian)
+   	- [Table of Contents](#table-of-contents)
+   	- [Why Use This Plugin](#why-use-this-plugin)
+   	- [Features](#features)
+      		- [Prettier Integration](#prettier-integration)
+      		- [Smart Style Checking (26+ Customizable Rules)](#smart-style-checking-26-customizable-rules)
+      		- [Status Bar Integration](#status-bar-integration)
+      		- [Auto-Fix Capability](#auto-fix-capability)
+      		- [Flexible Configuration](#flexible-configuration)
+      		- [YAML Front Matter Support](#yaml-front-matter-support)
+      		- [Multiple File Types](#multiple-file-types)
+   	- [Installation](#installation)
+      		- [From Obsidian Community Plugins (Recommended)](#from-obsidian-community-plugins-recommended)
+      		- [Manual Installation](#manual-installation)
+   	- [How to Use](#how-to-use)
+      		- [Quick Start](#quick-start)
+      		- [Available Commands](#available-commands)
+      		- [Configuration](#configuration)
+         			- [General Settings](#general-settings)
+         			- [Format Settings](#format-settings)
+         			- [Advanced Settings](#advanced-settings)
+         			- [Lint Rules](#lint-rules)
+   	- [Tips \& Best Practices](#tips--best-practices)
+      		- [Start Simple](#start-simple)
+      		- [Use Format on Save](#use-format-on-save)
+      		- [Customize to Your Style](#customize-to-your-style)
+      		- [Lint Before Important Exports](#lint-before-important-exports)
+   	- [Troubleshooting](#troubleshooting)
+      		- [Plugin Not Working](#plugin-not-working)
+      		- [Formatting Looks Wrong](#formatting-looks-wrong)
+      		- [Lint Errors Seem Incorrect](#lint-errors-seem-incorrect)
+   	- [Development](#development)
+      		- [Prerequisites](#prerequisites)
+      		- [Setting Up Development Environment](#setting-up-development-environment)
+      		- [Project Structure](#project-structure)
+      		- [Available Scripts](#available-scripts)
+      		- [Development Workflow](#development-workflow)
+      		- [Architecture Guidelines](#architecture-guidelines)
+      		- [Key Technologies](#key-technologies)
+      		- [Testing](#testing)
+      		- [Debugging](#debugging)
+      		- [Pull Request Guidelines](#pull-request-guidelines)
+      		- [Troubleshooting Development Issues](#troubleshooting-development-issues)
+   	- [Contributing](#contributing)
+   	- [Support](#support)
+   	- [Author](#author)
+   	- [License](#license)
+   	- [Links](#links)
+
+## Why Use This Plugin
 
 Clean, consistent markdown makes your notes easier to read and maintain. This plugin helps you:
 
@@ -14,12 +65,15 @@ Clean, consistent markdown makes your notes easier to read and maintain. This pl
 ## Features
 
 ### Prettier Integration
+
 Get professional-grade markdown formatting powered by Prettier. Your notes will have perfect line wrapping, consistent spacing, and clean structure.
 
 ### Smart Style Checking (26+ Customizable Rules)
+
 Keep your markdown consistent with intelligent style checking that adapts to how you write:
 
 **Document Structure**:
+
 - Ensures proper heading hierarchy
 - Prevents duplicate headings
 - Maintains a single top-level heading per document
@@ -27,42 +81,52 @@ Keep your markdown consistent with intelligent style checking that adapts to how
 - Makes sure files end with proper newlines
 
 **Lists & Formatting**:
+
 - Keeps list marker styles consistent (bullets, numbers)
 - Maintains proper list spacing and indentation
 - Adds blank lines around lists for better readability
 
 **Code Blocks**:
+
 - Detects programming languages automatically
 - Keeps code fence styles consistent
 - Maintains proper spacing around code blocks
 - Supports 200+ programming languages
 
 **Links & Images**:
+
 - Formats URLs cleanly
 - Requires alt text for accessibility
 
 **Spacing & Style**:
+
 - Controls line length for readability
 - Removes trailing spaces
 - Manages blank lines for better document flow
 - Keeps emphasis and bold markers consistent
 
 ### Status Bar Integration
+
 Track your document's health at a glance:
+
 - **Lint Status** - Shows when your document is clean or needs attention
 - **Format Status** - Displays formatting status in real time
 - Updates automatically when you switch between documents
 - Icons adapt to match your Obsidian theme
 
 ### Auto-Fix Capability
+
 Fix common markdown issues automatically with just one command:
+
 - Detects and corrects formatting problems intelligently
 - Coordinates formatting and linting seamlessly
 - Cleans up multiple issues with a single click
 - Preserves your content while fixing the structure
 
 ### Flexible Configuration
+
 Customize the plugin to match how you write:
+
 - Turn specific features on or off
 - Adjust formatting options to suit your preferences
 - Choose from over 26 style rules
@@ -71,17 +135,20 @@ Customize the plugin to match how you write:
 - Access all settings through Obsidian's interface
 
 ### YAML Front Matter Support
+
 Your metadata stays safe:
+
 - Preserves all YAML front matter during formatting
 - Excludes front matter from style checking
 - Works seamlessly with Obsidian's properties and metadata
 
 ### Multiple File Types
+
 Works with all your markdown files:
+
 - `.md` - Standard Markdown
 - `.markdown` - Alternative extension
 - `.mdx` - Markdown with JSX
-
 
 ## Installation
 
@@ -95,11 +162,15 @@ Works with all your markdown files:
 ### Manual Installation
 
 1. Download the latest release from [GitHub Releases](https://github.com/devops-infinity/obsidian-lint-and-format/releases)
+
 2. Extract the files to your vault's plugins folder:
-   ```
-   <your-vault>/.obsidian/plugins/obsidian-lint-and-format/
-   ```
+
+    ```text
+    <your-vault>/.obsidian/plugins/obsidian-lint-and-format/
+    ```
+
 3. Reload Obsidian (or restart the app)
+
 4. Go to **Settings → Community Plugins** and enable "Lint & Format"
 
 ## How to Use
@@ -109,32 +180,35 @@ Works with all your markdown files:
 1. Open any markdown note in Obsidian
 2. Press `Ctrl/Cmd + P` to open the Command Palette
 3. Search for and run one of these commands:
-   - **Format Document** - Format with Prettier
-   - **Lint Document** - Check for style issues
-   - **Lint and Auto-Fix** - Fix issues automatically
-   - **Format and Lint** - Format then check for issues
+    - **Format Document** - Format with Prettier
+    - **Lint Document** - Check for style issues
+    - **Lint and Auto-Fix** - Fix issues automatically
+    - **Format and Lint** - Format then check for issues
 
 ### Available Commands
 
-| Command | Description | Keyboard Shortcut |
-|---------|-------------|-------------------|
-| **Format Document** | Apply Prettier formatting to current file | Set in Settings |
-| **Lint Document** | Show all linting issues with detailed information | Set in Settings |
-| **Lint and Auto-Fix** | Automatically fix all fixable linting issues | Set in Settings |
-| **Format and Lint** | Run formatting and linting together | Set in Settings |
+| Command               | Description                                       | Keyboard Shortcut |
+| --------------------- | ------------------------------------------------- | ----------------- |
+| **Format Document**   | Apply Prettier formatting to current file         | Set in Settings   |
+| **Lint Document**     | Show all linting issues with detailed information | Set in Settings   |
+| **Lint and Auto-Fix** | Automatically fix all fixable linting issues      | Set in Settings   |
+| **Format and Lint**   | Run formatting and linting together               | Set in Settings   |
 
 ### Configuration
 
 Access settings through **Settings → Community Plugins → Lint & Format**
 
 #### General Settings
+
 - **Enable auto-formatting** - Lets the plugin format your documents
 - **Enable linting** - Lets the plugin check for style issues
 - **Format on save** - Formats automatically when you save files
 - **Show lint errors** - Shows notifications when there are lint issues
 
 #### Format Settings
+
 Configure how your markdown gets formatted:
+
 - **Print Width** - Maximum line length (default: 0, which means no limit)
 - **Tab Width** - Number of spaces for each indentation level (default: 2)
 - **Use Tabs** - Whether to use tabs instead of spaces (default: false)
@@ -144,6 +218,7 @@ Configure how your markdown gets formatted:
 #### Advanced Settings
 
 Fine-tune how the plugin behaves:
+
 - **Modal Display Delay** - How long before modals appear (default: 100ms)
 - **Max Auto-Fix Iterations** - Maximum number of auto-fix attempts (default: 10)
 - **Format on Save Delay** - Delay for cursor restoration after formatting (default: 0ms)
@@ -156,9 +231,11 @@ Fine-tune how the plugin behaves:
 - **Tab-Based List Indent** - Indentation level when using tabs for lists (default: 1)
 
 #### Lint Rules
+
 Choose which style rules you want to enforce (all are enabled by default unless noted):
 
 **Document Structure**:
+
 - Requires proper heading hierarchy (enabled)
 - Prevents duplicate headings (enabled)
 - Enforces one top-level heading per document (enabled)
@@ -168,22 +245,26 @@ Choose which style rules you want to enforce (all are enabled by default unless 
 - Sets heading style (default: atx)
 
 **Lists**:
+
 - Bullet style preference (default: asterisk)
 - Ordered list numbering style (default: ordered)
 - Spacing after list markers (enabled)
 - Blank lines around lists (enabled)
 
 **Code Blocks**:
+
 - Code fence style preference (default: backtick)
 - Spacing around code blocks (enabled)
 - Code block style (default: fenced)
 - Default language for unlabeled code blocks (default: text, with 200+ languages available)
 
 **Links & Images**:
+
 - Formats bare URLs automatically (disabled by default)
 - Requires alt text for images (enabled)
 
 **Spacing & Style**:
+
 - Removes trailing spaces (enabled)
 - Controls blank lines between sections (enabled)
 - Requires blank line before headings (enabled)
@@ -194,35 +275,40 @@ Choose which style rules you want to enforce (all are enabled by default unless 
 ## Tips & Best Practices
 
 ### Start Simple
+
 Enable just a few rules at first, then add more as you become comfortable with the plugin.
 
 ### Use Format on Save
+
 For a seamless experience, turn on "Format on save" to clean up your notes automatically as you work.
 
 ### Customize to Your Style
+
 There's no "perfect" markdown style—configure the plugin to match your writing preferences.
 
 ### Lint Before Important Exports
-Run a quick lint check before you export or publish your notes to make sure everything looks professional.
 
+Run a quick lint check before you export or publish your notes to make sure everything looks professional.
 
 ## Troubleshooting
 
-### Plugin Not Working?
+### Plugin Not Working
+
 1. Make sure the plugin is enabled in Settings → Community Plugins
 2. Try reloading Obsidian (Ctrl/Cmd + R)
 3. Check that your file is a supported format (.md, .markdown, .mdx)
 
-### Formatting Looks Wrong?
+### Formatting Looks Wrong
+
 1. Check your Format Settings and adjust the options
 2. Remember that YAML front matter is intentionally excluded from formatting
 3. Use the "Format and Lint Document" command for best results
 
-### Lint Errors Seem Incorrect?
+### Lint Errors Seem Incorrect
+
 1. Review your Lint Rules in the settings
 2. Disable any specific rules you don't need
 3. Note that some issues can't be auto-fixed and need manual correction
-
 
 ## Development
 
@@ -231,6 +317,7 @@ Want to contribute to the plugin or customize it for your needs? This section he
 ### Prerequisites
 
 Before you begin, make sure you have these installed:
+
 - **Node.js** - Version 16 or higher (LTS recommended)
 - **npm** or **yarn** - Package manager for installing dependencies
 - **Git** - For version control and cloning the repository
@@ -240,76 +327,81 @@ Before you begin, make sure you have these installed:
 ### Setting Up Development Environment
 
 1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/devops-infinity/obsidian-lint-and-format.git
-   cd obsidian-lint-and-format
-   ```
+
+    ```bash
+    git clone https://github.com/devops-infinity/obsidian-lint-and-format.git
+    cd obsidian-lint-and-format
+    ```
 
 2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 3. **Build the Plugin**
 
-   For production build:
-   ```bash
-   npm run build
-   ```
+    For production build:
 
-   For development with hot reload:
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run build
+    ```
+
+    For development with hot reload:
+
+    ```bash
+    npm run dev
+    ```
 
 4. **Link to Obsidian Vault**
 
-   Create a symbolic link or copy the built files to your Obsidian vault's plugins folder:
-   ```bash
-   # Example: Create symbolic link (Linux/macOS)
-   ln -s /path/to/obsidian-lint-and-format /path/to/vault/.obsidian/plugins/obsidian-lint-and-format
+    Create a symbolic link or copy the built files to your Obsidian vault's plugins folder:
 
-   # Or manually copy files
-   cp main.js manifest.json /path/to/vault/.obsidian/plugins/obsidian-lint-and-format/
-   ```
+    ```bash
+    # Example: Create symbolic link (Linux/macOS)
+    ln -s /path/to/obsidian-lint-and-format /path/to/vault/.obsidian/plugins/obsidian-lint-and-format
+
+    # Or manually copy files
+    cp main.js manifest.json /path/to/vault/.obsidian/plugins/obsidian-lint-and-format/
+    ```
 
 5. **Enable the Plugin**
-   - Open Obsidian
-   - Go to Settings → Community Plugins
-   - Enable "Lint & Format"
-   - Reload Obsidian if needed
+    - Open Obsidian
+    - Go to Settings → Community Plugins
+    - Enable "Lint & Format"
+    - Reload Obsidian if needed
 
 ### Project Structure
 
-```
+```md
 obsidian-lint-and-format/
-├── src/                          # Source files
-│   ├── core/                     # Core interfaces and types
-│   │   └── interfaces.ts         # TypeScript interfaces
-│   ├── formatters/               # Formatting modules
+├── src/                    # Source files
+│   ├── core/               # Core interfaces and types
+│   │   └── interfaces.ts   # TypeScript interfaces
+│   ├── formatters/         # Formatting modules
 │   │   ├── fencedCodeBlockFormatter.ts
 │   │   ├── markdownFormatter.ts
 │   │   ├── markdownListNormalizer.ts
 │   │   ├── markdownPostProcessingPipeline.ts
 │   │   └── tableOfContentsBuilder.ts
-│   ├── parsers/                  # Parser modules
+│   ├── parsers/            # Parser modules
 │   │   └── yamlFrontMatterParser.ts
-│   ├── services/                 # Service layer
+│   ├── services/           # Service layer
 │   │   └── lintValidationService.ts
-│   ├── settings/                 # Settings UI
+│   ├── settings/           # Settings UI
 │   │   └── pluginSettingsPanel.ts
-│   ├── ui/                       # UI components
-│   ├── utils/                    # Utility functions
+│   ├── ui/                 # UI components
+│   ├── utils/              # Utility functions
 │   │   ├── markdownlintAdapter.ts
 │   │   ├── prettierConfig.ts
 │   │   └── codeLanguages.ts
-│   ├── main.ts                   # Plugin entry point
-│   └── pluginSettingsDefaults.ts # Default settings
-├── docs/                         # Documentation files
-├── manifest.json                 # Plugin manifest
-├── package.json                  # NPM dependencies
-├── tsconfig.json                 # TypeScript configuration
-└── README.md                     # This file
+│   ├── main.ts             # Plugin entry point
+│   └── pluginSettingsDefaults.ts  # Default settings
+├── docs/                   # Documentation files
+├── manifest.json           # Plugin manifest
+├── package.json            # NPM dependencies
+├── tsconfig.json           # TypeScript configuration
+└── README.md               # This file
 ```
 
 ### Available Scripts
@@ -319,33 +411,35 @@ obsidian-lint-and-format/
 - **npm run typecheck** - Run TypeScript type checking
 - **npm run lint** - Run ESLint to check code quality
 - **npm run format** - Format code with Prettier
+- **npm run lint:md** - Run markdown linter on all .md files
+- **npm run lint:md:fix** - Automatically fix markdown issues
 
 ### Development Workflow
 
 1. **Make Changes**
-   - Edit TypeScript files in the `src/` directory
-   - Follow the existing code style and patterns
-   - Keep the modular architecture intact
+    - Edit TypeScript files in the `src/` directory
+    - Follow the existing code style and patterns
+    - Keep the modular architecture intact
 
 2. **Test Your Changes**
-   - Run `npm run dev` to build with watch mode
-   - Test in Obsidian with sample markdown files
-   - Make sure all features work correctly
+    - Run `npm run dev` to build with watch mode
+    - Test in Obsidian with sample markdown files
+    - Make sure all features work correctly
 
 3. **Type Safety**
-   - Run `npm run typecheck` to catch TypeScript errors
-   - The project uses strict TypeScript checking
-   - All code must compile without errors
+    - Run `npm run typecheck` to catch TypeScript errors
+    - The project uses strict TypeScript checking
+    - All code must compile without errors
 
 4. **Code Quality**
-   - Run `npm run lint` to check code quality
-   - Run `npm run format` to auto-format your code
-   - Follow semantic naming conventions
+    - Run `npm run lint` to check code quality
+    - Run `npm run format` to auto-format your code
+    - Follow semantic naming conventions
 
 5. **Build for Production**
-   - Run `npm run build` to create an optimized build
-   - Test the production build in Obsidian
-   - Make sure there are no console errors or warnings
+    - Run `npm run build` to create an optimized build
+    - Test the production build in Obsidian
+    - Make sure there are no console errors or warnings
 
 ### Architecture Guidelines
 
@@ -398,17 +492,20 @@ When you submit a pull request:
 ### Troubleshooting Development Issues
 
 **Build Errors:**
+
 - Delete `node_modules/` and run `npm install` again
 - Make sure Node.js version is 16 or higher
 - Check for TypeScript errors with `npm run typecheck`
 
 **Plugin Not Loading:**
+
 - Check that `manifest.json` is in the plugin folder
 - Look for error messages in Obsidian's console
 - Make sure the plugin is enabled in Obsidian settings
 - Try reloading Obsidian
 
 **Hot Reload Not Working:**
+
 - Restart `npm run dev`
 - Manually reload Obsidian (Ctrl/Cmd + R)
 - Check file permissions on the plugin folder
@@ -427,16 +524,18 @@ Check the [GitHub repository](https://github.com/devops-infinity/obsidian-lint-a
 ## Support
 
 If you find this plugin helpful, consider:
+
 - Starring the repository on GitHub
 - Reporting bugs or suggesting features
 - Sharing it with other Obsidian users
 
 ## Author
 
-**Md. Sazzad Hossain Sharkar**
-Principal Architect, Senior Software Engineer, Full-stack Web Developer
+Md. Sazzad Hossain Sharkar
 
-- Website: [https://szd.sh/](https://szd.sh/)
+Software Engineer, Full-stack Web Developer
+
+- Website: [https://szd.sh](https://szd.sh/)
 - GitHub: [@SHSharkar](https://github.com/SHSharkar)
 
 ## License

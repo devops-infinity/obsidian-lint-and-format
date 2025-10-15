@@ -6,7 +6,10 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.claude\" \"#memory\" \"#CLAUDE.md\"",
+		"lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\" \"#.claude\" \"#memory\" \"#CLAUDE.md\"",
+		"precommit": "npm run lint:md:fix"
 	},
 	"keywords": [
 		"obsidian",
@@ -40,6 +43,7 @@
 		"@typescript-eslint/parser": "^8.46.0",
 		"builtin-modules": "^5.0.0",
 		"esbuild": "^0.25.10",
+		"markdownlint-cli2": "^0.18.1",
 		"obsidian": "latest",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
