@@ -1,19 +1,22 @@
-import type { LintResult } from '../core/interfaces';
-import { colors, createStyles, spacing, borderRadius, fontSize } from '../utils/designTokens';
+import type { LintResult, DesignSystem } from '../core/interfaces';
+import { colors, createStyles as createStylesFactory, spacing, borderRadius, getFontSize } from '../utils/designTokens';
 import { getSeverityColor, getSeverityIcon, getSuccessIcon } from '../utils/severityHelpers';
 
 interface LintResultsModalProps {
     result: LintResult;
     onFix: () => void | Promise<void>;
+    designSystem: DesignSystem;
 }
 
-export function LintResultsModal({ result: lintResult, onFix }: LintResultsModalProps) {
+export function LintResultsModal({ result: lintResult, onFix, designSystem }: LintResultsModalProps) {
     const hasFixableIssues = lintResult.issues.some((issue) => issue.fixable);
+    const styles = createStylesFactory(designSystem);
+    const fontSize = getFontSize(designSystem);
 
     return (
-        <div style={createStyles.container()}>
+        <div style={styles.container()}>
             <div style={{
-                ...createStyles.infoBox(),
+                ...styles.infoBox(),
                 marginTop: 0,
                 marginBottom: spacing.sm,
                 padding: '8px 12px',
@@ -64,7 +67,7 @@ export function LintResultsModal({ result: lintResult, onFix }: LintResultsModal
                             <button
                                 onClick={onFix}
                                 style={{
-                                    ...createStyles.button('primary'),
+                                    ...styles.button('primary'),
                                     backgroundColor: colors.interactive.accent,
                                     color: 'var(--text-on-accent)',
                                     border: 'none',

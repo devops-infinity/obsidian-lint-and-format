@@ -95,12 +95,12 @@ export default class LintAndFormatPlugin extends Plugin {
                             this.updateLintStatus(finalResult);
                             if (finalResult.totalIssues > 0) {
                                 setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
+                                    new LintResultsModalWrapper(this.app, finalResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
                     );
-                }).open();
+                }, this.settings.designSystem).open();
             },
         });
 
@@ -195,11 +195,11 @@ export default class LintAndFormatPlugin extends Plugin {
                                                     this.updateLintStatus(finalResult);
                                                 }
                                             );
-                                        }).open();
+                                        }, this.settings.designSystem).open();
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 } else {
                                     setTimeout(() => {
-                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {}).open();
+                                        new LintResultsModalWrapper(this.app, recheckResult, async () => {}, this.settings.designSystem).open();
                                     }, this.settings.uiConfig.modalDisplayDelay);
                                 }
                             }
@@ -211,7 +211,7 @@ export default class LintAndFormatPlugin extends Plugin {
                             } else {
                                 new Notice(`Document formatted. ${lintResult.totalIssues} lint issue(s) found (not auto-fixable).`);
                                 setTimeout(() => {
-                                    new LintResultsModalWrapper(this.app, lintResult, async () => {}).open();
+                                    new LintResultsModalWrapper(this.app, lintResult, async () => {}, this.settings.designSystem).open();
                                 }, this.settings.uiConfig.modalDisplayDelay);
                             }
                         }
@@ -328,12 +328,12 @@ export default class LintAndFormatPlugin extends Plugin {
                     this.updateLintStatus(finalResult);
                     if (finalResult.totalIssues > 0) {
                         setTimeout(() => {
-                            new LintResultsModalWrapper(this.app, finalResult, async () => {}).open();
+                            new LintResultsModalWrapper(this.app, finalResult, async () => {}, this.settings.designSystem).open();
                         }, this.settings.uiConfig.modalDisplayDelay);
                     }
                 }
             );
-        }).open();
+        }, this.settings.designSystem).open();
     }
 
     async handleFormatStatusClick() {

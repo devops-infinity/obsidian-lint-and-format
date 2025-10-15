@@ -1,4 +1,5 @@
 import { CSSProperties } from 'react';
+import type { DesignSystem } from '../core/interfaces';
 
 export const spacing = {
     xs: '5px',
@@ -12,12 +13,6 @@ export const borderRadius = {
     sm: '3px',
     md: '5px',
     lg: '8px',
-};
-
-export const fontSize = {
-    sm: '0.9em',
-    md: '1em',
-    lg: '1.1em',
 };
 
 export const fontWeight = {
@@ -54,109 +49,121 @@ export const layout = {
     modalWidth: '100%',
 };
 
-export const createStyles = {
-    container: (height: string = layout.maxHeight): CSSProperties => ({
-        padding: `${spacing.sm} ${spacing.lg} ${spacing.lg} ${spacing.lg}`,
-        fontFamily: 'var(--font-interface)',
-        maxHeight: height,
-        overflowY: 'auto',
-    }),
+export function getFontSize(designSystem: DesignSystem) {
+    return {
+        sm: designSystem.fontSize.small,
+        md: designSystem.fontSize.medium,
+        lg: designSystem.fontSize.large,
+    };
+}
 
-    header: (): CSSProperties => ({
-        marginBottom: spacing.lg,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    }),
+export function createStyles(designSystem: DesignSystem) {
+    const fontSize = getFontSize(designSystem);
 
-    heading: (level: 'h2' | 'h3' | 'h4' = 'h3'): CSSProperties => ({
-        margin: level === 'h2' ? 0 : `${spacing.md} 0`,
-        paddingBottom: spacing.sm,
-        borderBottom: level === 'h3' ? `2px solid ${colors.background.modifier}` : 'none',
-    }),
+    return {
+        container: (height: string = layout.maxHeight): CSSProperties => ({
+            padding: `${spacing.sm} ${spacing.lg} ${spacing.lg} ${spacing.lg}`,
+            fontFamily: 'var(--font-interface)',
+            maxHeight: height,
+            overflowY: 'auto',
+        }),
 
-    section: (): CSSProperties => ({
-        marginBottom: spacing.xl,
-    }),
+        header: (): CSSProperties => ({
+            marginBottom: spacing.lg,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        }),
 
-    flexColumn: (gap: string = spacing.md): CSSProperties => ({
-        display: 'flex',
-        flexDirection: 'column',
-        gap,
-    }),
+        heading: (level: 'h2' | 'h3' | 'h4' = 'h3'): CSSProperties => ({
+            margin: level === 'h2' ? 0 : `${spacing.md} 0`,
+            paddingBottom: spacing.sm,
+            borderBottom: level === 'h3' ? `2px solid ${colors.background.modifier}` : 'none',
+        }),
 
-    flexRow: (gap: string = spacing.sm): CSSProperties => ({
-        display: 'flex',
-        gap,
-    }),
+        section: (): CSSProperties => ({
+            marginBottom: spacing.xl,
+        }),
 
-    label: (): CSSProperties => ({
-        display: 'flex',
-        alignItems: 'center',
-        gap: spacing.sm,
-    }),
+        flexColumn: (gap: string = spacing.md): CSSProperties => ({
+            display: 'flex',
+            flexDirection: 'column',
+            gap,
+        }),
 
-    input: (): CSSProperties => ({
-        padding: spacing.xs,
-    }),
+        flexRow: (gap: string = spacing.sm): CSSProperties => ({
+            display: 'flex',
+            gap,
+        }),
 
-    button: (variant: 'primary' | 'secondary' = 'secondary'): CSSProperties => ({
-        padding: `8px 16px`,
-        cursor: 'pointer',
-        fontWeight: variant === 'primary' ? fontWeight.bold : fontWeight.normal,
-    }),
+        label: (): CSSProperties => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.sm,
+        }),
 
-    description: (): CSSProperties => ({
-        fontSize: fontSize.sm,
-        color: colors.text.muted,
-        marginTop: spacing.xs,
-    }),
+        input: (): CSSProperties => ({
+            padding: spacing.xs,
+        }),
 
-    infoBox: (): CSSProperties => ({
-        marginTop: spacing.xl,
-        padding: spacing.md,
-        backgroundColor: colors.background.secondary,
-        borderRadius: borderRadius.md,
-    }),
+        button: (variant: 'primary' | 'secondary' = 'secondary'): CSSProperties => ({
+            padding: designSystem.spacing.button,
+            cursor: 'pointer',
+            fontWeight: variant === 'primary' ? fontWeight.bold : fontWeight.normal,
+        }),
 
-    tabContainer: (): CSSProperties => ({
-        display: 'flex',
-        borderBottom: `1px solid ${colors.background.modifier}`,
-        marginBottom: spacing.lg,
-    }),
+        description: (): CSSProperties => ({
+            fontSize: fontSize.sm,
+            color: colors.text.muted,
+            marginTop: spacing.xs,
+        }),
 
-    tab: (active: boolean): CSSProperties => ({
-        padding: `12px 24px`,
-        backgroundColor: active ? colors.background.primary : 'transparent',
-        color: active ? colors.text.normal : colors.text.muted,
-        border: 'none',
-        borderBottom: active ? `2px solid ${colors.interactive.accent}` : '2px solid transparent',
-        cursor: 'pointer',
-        fontWeight: active ? fontWeight.bold : fontWeight.normal,
-        transition: 'all 0.2s ease',
-    }),
+        infoBox: (): CSSProperties => ({
+            marginTop: spacing.xl,
+            padding: spacing.md,
+            backgroundColor: colors.background.secondary,
+            borderRadius: borderRadius.md,
+        }),
 
-    tabContent: (): CSSProperties => ({
-        flex: 1,
-        overflowY: 'auto',
-        padding: spacing.lg,
-    }),
+        tabContainer: (): CSSProperties => ({
+            display: 'flex',
+            borderBottom: `1px solid ${colors.background.modifier}`,
+            marginBottom: spacing.lg,
+        }),
 
-    issueItem: (): CSSProperties => ({
-        padding: spacing.md,
-        marginBottom: spacing.sm,
-        backgroundColor: colors.background.secondary,
-        borderRadius: borderRadius.sm,
-        borderLeft: `4px solid`,
-    }),
+        tab: (active: boolean): CSSProperties => ({
+            padding: designSystem.spacing.tab,
+            backgroundColor: active ? colors.background.primary : 'transparent',
+            color: active ? colors.text.normal : colors.text.muted,
+            border: 'none',
+            borderBottom: active ? `2px solid ${colors.interactive.accent}` : '2px solid transparent',
+            cursor: 'pointer',
+            fontWeight: active ? fontWeight.bold : fontWeight.normal,
+            transition: `all ${designSystem.animation.transitionDuration} ${designSystem.animation.transitionEasing}`,
+        }),
 
-    badge: (color: string): CSSProperties => ({
-        display: 'inline-block',
-        padding: `2px 8px`,
-        backgroundColor: color,
-        color: '#fff',
-        borderRadius: borderRadius.sm,
-        fontSize: fontSize.sm,
-        fontWeight: fontWeight.bold,
-    }),
-};
+        tabContent: (): CSSProperties => ({
+            flex: 1,
+            overflowY: 'auto',
+            padding: spacing.lg,
+        }),
+
+        issueItem: (): CSSProperties => ({
+            padding: spacing.md,
+            marginBottom: spacing.sm,
+            backgroundColor: colors.background.secondary,
+            borderRadius: borderRadius.sm,
+            borderLeft: `4px solid`,
+        }),
+
+        badge: (color: string): CSSProperties => ({
+            display: 'inline-block',
+            padding: designSystem.spacing.badge,
+            backgroundColor: color,
+            color: '#fff',
+            borderRadius: borderRadius.sm,
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.bold,
+        }),
+    };
+}

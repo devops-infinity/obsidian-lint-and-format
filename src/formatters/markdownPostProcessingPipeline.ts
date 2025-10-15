@@ -38,7 +38,8 @@ export async function applyMarkdownPostProcessing(
             currentlyProcessedContent = await normalizeMarkdownListStructure(
                 currentlyProcessedContent,
                 configuredFeatures.enableLineTrimmingInLists,
-                userLintRules
+                userLintRules,
+                userPrettierConfig
             );
 
             const listsWereNormalized = currentlyProcessedContent !== contentBeforeListNormalization;
@@ -85,7 +86,8 @@ export async function applyMarkdownPostProcessing(
                 currentlyProcessedContent,
                 configuredFeatures.tocDepth,
                 configuredFeatures.tocPosition,
-                userLintRules
+                userLintRules,
+                userPrettierConfig
             );
 
             const tocWasGenerated = currentlyProcessedContent !== contentBeforeTocGeneration;

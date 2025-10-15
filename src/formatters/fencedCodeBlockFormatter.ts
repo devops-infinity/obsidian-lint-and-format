@@ -68,9 +68,9 @@ async function formatCodeWithPrettier(
 
     try {
         const beautifiedCode = await prettier.format(sourceCode, {
+            ...userPrettierConfig,
             parser: prettierConfiguration.parserName,
             plugins: prettierConfiguration.requiredPlugins,
-            ...userPrettierConfig,
         });
 
         return beautifiedCode.trim();

@@ -4,12 +4,14 @@ import remarkStringify from 'remark-stringify';
 import remarkToc from 'remark-toc';
 import remarkGfm from 'remark-gfm';
 import type { LintRules } from '../core/interfaces';
+import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 
 export async function buildTableOfContentsInMarkdown(
     markdownContent: string,
     maximumHeadingDepth: number,
     insertionPosition: 'top' | 'after-frontmatter',
-    userLintRules: LintRules
+    userLintRules: LintRules,
+    prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
     const yamlFrontmatterMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n/);
     const extractedFrontmatter = yamlFrontmatterMatch ? yamlFrontmatterMatch[0] : '';
@@ -46,7 +48,7 @@ export async function buildTableOfContentsInMarkdown(
         .use(remarkToc, tocConfiguration)
         .use(remarkStringify, {
             bullet: listBulletCharacter,
-            listItemIndent: 'one',
+            listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
         });
 
     try {

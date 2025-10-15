@@ -3,11 +3,13 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import { visit } from 'unist-util-visit';
 import type { LintRules } from '../core/interfaces';
+import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 
 export async function normalizeMarkdownListStructure(
     markdownContent: string,
     shouldTrimIntraListBlankLines: boolean,
-    userLintRules: LintRules
+    userLintRules: LintRules,
+    prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
     const markdownProcessor = unified()
         .use(remarkParse)
@@ -38,7 +40,7 @@ export async function normalizeMarkdownListStructure(
             bullet: userLintRules.unorderedListStyle === 'asterisk' ? '*'
                 : userLintRules.unorderedListStyle === 'plus' ? '+'
                 : '-',
-            listItemIndent: 'one',
+            listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
             incrementListMarker: userLintRules.orderedListStyle === 'ordered',
         });
 

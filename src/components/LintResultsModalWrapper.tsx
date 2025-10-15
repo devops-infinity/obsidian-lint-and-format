@@ -1,17 +1,19 @@
 import { App, Modal } from 'obsidian';
 import { Root, createRoot } from 'react-dom/client';
-import type { LintResult } from '../core/interfaces';
+import type { LintResult, DesignSystem } from '../core/interfaces';
 import { LintResultsModal } from './LintResultsModal';
 
 export class LintResultsModalWrapper extends Modal {
     private reactRoot: Root | null = null;
     private lintResult: LintResult;
     private fixHandler: () => void | Promise<void>;
+    private designSystem: DesignSystem;
 
-    constructor(app: App, lintResult: LintResult, fixHandler: () => void | Promise<void>) {
+    constructor(app: App, lintResult: LintResult, fixHandler: () => void | Promise<void>, designSystem: DesignSystem) {
         super(app);
         this.lintResult = lintResult;
         this.fixHandler = fixHandler;
+        this.designSystem = designSystem;
         this.setTitle('Lint Results');
     }
 
@@ -26,6 +28,7 @@ export class LintResultsModalWrapper extends Modal {
                     await this.fixHandler();
                     this.close();
                 }}
+                designSystem={this.designSystem}
             />
         );
     }
