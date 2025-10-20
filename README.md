@@ -1,5 +1,7 @@
 # Lint & Format for Obsidian
 
+[![Release Obsidian Plugin](https://github.com/devops-infinity/obsidian-lint-and-format/actions/workflows/release.yml/badge.svg)](https://github.com/devops-infinity/obsidian-lint-and-format/actions/workflows/release.yml)
+
 Keep your Obsidian notes clean and consistent with professional markdown linting and formatting.
 
 ## Table of Contents
