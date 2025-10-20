@@ -53,6 +53,7 @@ export async function buildTableOfContentsInMarkdown(
         .use(remarkStringify, {
             bullet: listBulletCharacter,
             listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
+            incrementListMarker: false,
         });
 
     try {

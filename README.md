@@ -5,53 +5,53 @@ Keep your Obsidian notes clean and consistent with professional markdown linting
 ## Table of Contents
 
 - [Lint \& Format for Obsidian](#lint--format-for-obsidian)
-   	- [Table of Contents](#table-of-contents)
-   	- [Why Use This Plugin](#why-use-this-plugin)
-   	- [Features](#features)
-      		- [Prettier Integration](#prettier-integration)
-      		- [Smart Style Checking (26+ Customizable Rules)](#smart-style-checking-26-customizable-rules)
-      		- [Status Bar Integration](#status-bar-integration)
-      		- [Auto-Fix Capability](#auto-fix-capability)
-      		- [Flexible Configuration](#flexible-configuration)
-      		- [YAML Front Matter Support](#yaml-front-matter-support)
-      		- [Multiple File Types](#multiple-file-types)
-   	- [Installation](#installation)
-      		- [From Obsidian Community Plugins (Recommended)](#from-obsidian-community-plugins-recommended)
-      		- [Manual Installation](#manual-installation)
-   	- [How to Use](#how-to-use)
-      		- [Quick Start](#quick-start)
-      		- [Available Commands](#available-commands)
-      		- [Configuration](#configuration)
-         			- [General Settings](#general-settings)
-         			- [Format Settings](#format-settings)
-         			- [Advanced Settings](#advanced-settings)
-         			- [Lint Rules](#lint-rules)
-   	- [Tips \& Best Practices](#tips--best-practices)
-      		- [Start Simple](#start-simple)
-      		- [Use Format on Save](#use-format-on-save)
-      		- [Customize to Your Style](#customize-to-your-style)
-      		- [Lint Before Important Exports](#lint-before-important-exports)
-   	- [Troubleshooting](#troubleshooting)
-      		- [Plugin Not Working](#plugin-not-working)
-      		- [Formatting Looks Wrong](#formatting-looks-wrong)
-      		- [Lint Errors Seem Incorrect](#lint-errors-seem-incorrect)
-   	- [Development](#development)
-      		- [Prerequisites](#prerequisites)
-      		- [Setting Up Development Environment](#setting-up-development-environment)
-      		- [Project Structure](#project-structure)
-      		- [Available Scripts](#available-scripts)
-      		- [Development Workflow](#development-workflow)
-      		- [Architecture Guidelines](#architecture-guidelines)
-      		- [Key Technologies](#key-technologies)
-      		- [Testing](#testing)
-      		- [Debugging](#debugging)
-      		- [Pull Request Guidelines](#pull-request-guidelines)
-      		- [Troubleshooting Development Issues](#troubleshooting-development-issues)
-   	- [Contributing](#contributing)
-   	- [Support](#support)
-   	- [Author](#author)
-   	- [License](#license)
-   	- [Links](#links)
+    - [Table of Contents](#table-of-contents)
+    - [Why Use This Plugin](#why-use-this-plugin)
+    - [Features](#features)
+        - [Prettier Integration](#prettier-integration)
+        - [Smart Style Checking (26+ Customizable Rules)](#smart-style-checking-26-customizable-rules)
+        - [Status Bar Integration](#status-bar-integration)
+        - [Auto-Fix Capability](#auto-fix-capability)
+        - [Flexible Configuration](#flexible-configuration)
+        - [YAML Front Matter Support](#yaml-front-matter-support)
+        - [Multiple File Types](#multiple-file-types)
+    - [Installation](#installation)
+        - [From Obsidian Community Plugins (Recommended)](#from-obsidian-community-plugins-recommended)
+        - [Manual Installation](#manual-installation)
+    - [How to Use](#how-to-use)
+        - [Quick Start](#quick-start)
+        - [Available Commands](#available-commands)
+        - [Configuration](#configuration)
+            - [General Settings](#general-settings)
+            - [Format Settings](#format-settings)
+            - [Advanced Settings](#advanced-settings)
+            - [Lint Rules](#lint-rules)
+    - [Tips \& Best Practices](#tips--best-practices)
+        - [Start Simple](#start-simple)
+        - [Use Format on Save](#use-format-on-save)
+        - [Customize to Your Style](#customize-to-your-style)
+        - [Lint Before Important Exports](#lint-before-important-exports)
+    - [Troubleshooting](#troubleshooting)
+        - [Plugin Not Working](#plugin-not-working)
+        - [Formatting Looks Wrong](#formatting-looks-wrong)
+        - [Lint Errors Seem Incorrect](#lint-errors-seem-incorrect)
+    - [Development](#development)
+        - [Prerequisites](#prerequisites)
+        - [Setting Up Development Environment](#setting-up-development-environment)
+        - [Project Structure](#project-structure)
+        - [Available Scripts](#available-scripts)
+        - [Development Workflow](#development-workflow)
+        - [Architecture Guidelines](#architecture-guidelines)
+        - [Key Technologies](#key-technologies)
+        - [Testing](#testing)
+        - [Debugging](#debugging)
+        - [Pull Request Guidelines](#pull-request-guidelines)
+        - [Troubleshooting Development Issues](#troubleshooting-development-issues)
+    - [Contributing](#contributing)
+    - [Support](#support)
+    - [Author](#author)
+    - [License](#license)
+    - [Links](#links)
 
 ## Why Use This Plugin
 
@@ -375,33 +375,33 @@ Before you begin, make sure you have these installed:
 
 ```md
 obsidian-lint-and-format/
-├── src/                    # Source files
-│   ├── core/               # Core interfaces and types
-│   │   └── interfaces.ts   # TypeScript interfaces
-│   ├── formatters/         # Formatting modules
-│   │   ├── fencedCodeBlockFormatter.ts
-│   │   ├── markdownFormatter.ts
-│   │   ├── markdownListNormalizer.ts
-│   │   ├── markdownPostProcessingPipeline.ts
-│   │   └── tableOfContentsBuilder.ts
-│   ├── parsers/            # Parser modules
-│   │   └── yamlFrontMatterParser.ts
-│   ├── services/           # Service layer
-│   │   └── lintValidationService.ts
-│   ├── settings/           # Settings UI
-│   │   └── pluginSettingsPanel.ts
-│   ├── ui/                 # UI components
-│   ├── utils/              # Utility functions
-│   │   ├── markdownlintAdapter.ts
-│   │   ├── prettierConfig.ts
-│   │   └── codeLanguages.ts
-│   ├── main.ts             # Plugin entry point
-│   └── pluginSettingsDefaults.ts  # Default settings
-├── docs/                   # Documentation files
-├── manifest.json           # Plugin manifest
-├── package.json            # NPM dependencies
-├── tsconfig.json           # TypeScript configuration
-└── README.md               # This file
+├── src/ # Source files
+│ ├── core/ # Core interfaces and types
+│ │ └── interfaces.ts # TypeScript interfaces
+│ ├── formatters/ # Formatting modules
+│ │ ├── fencedCodeBlockFormatter.ts
+│ │ ├── markdownFormatter.ts
+│ │ ├── markdownListNormalizer.ts
+│ │ ├── markdownPostProcessingPipeline.ts
+│ │ └── tableOfContentsBuilder.ts
+│ ├── parsers/ # Parser modules
+│ │ └── yamlFrontMatterParser.ts
+│ ├── services/ # Service layer
+│ │ └── lintValidationService.ts
+│ ├── settings/ # Settings UI
+│ │ └── pluginSettingsPanel.ts
+│ ├── ui/ # UI components
+│ ├── utils/ # Utility functions
+│ │ ├── markdownlintAdapter.ts
+│ │ ├── prettierConfig.ts
+│ │ └── codeLanguages.ts
+│ ├── main.ts # Plugin entry point
+│ └── pluginSettingsDefaults.ts # Default settings
+├── docs/ # Documentation files
+├── manifest.json # Plugin manifest
+├── package.json # NPM dependencies
+├── tsconfig.json # TypeScript configuration
+└── README.md # This file
 ```
 
 ### Available Scripts
