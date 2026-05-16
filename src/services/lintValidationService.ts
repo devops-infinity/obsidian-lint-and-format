@@ -1,5 +1,5 @@
 import { Editor, Notice } from 'obsidian';
-import type { LintResult, LintRules, LintAdvancedConfig } from '../core/interfaces';
+import type { LintResult, LintRules, LintTuningConfig } from '../core/interfaces';
 import { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { lintMarkdownWithMarkdownlint as lintMarkdown, fixLintIssuesWithMarkdownlint as fixLintIssues } from '../utils/markdownlintAdapter';
 
@@ -9,11 +9,11 @@ export class LintValidationService {
         private prettierConfig: PrettierMarkdownConfig,
         private autofixRetryDelayMs: number,
         private maxAutofixAttempts: number,
-        private advancedConfig: LintAdvancedConfig
+        private tuningConfig: LintTuningConfig
     ) {}
 
     async lintContent(markdownContent: string): Promise<LintResult> {
-        return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig, this.advancedConfig);
+        return await lintMarkdown(markdownContent, this.lintRules, this.prettierConfig, this.tuningConfig);
     }
 
     async applyAutofixesAndValidate(

@@ -1,11 +1,7 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkStringify from 'remark-stringify';
-import remarkToc from 'remark-toc';
-import remarkGfm from 'remark-gfm';
 import type { LintRules } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { extractFrontMatter, reconstructWithFrontMatter, validateYAMLFrontMatter } from '../parsers/yamlFrontMatterParser';
+import { createTableOfContentsProcessor } from './unifiedProcessorFactory';
 
 export async function buildTableOfContentsInMarkdown(
     documentContent: string,
@@ -41,20 +37,11 @@ export async function buildTableOfContentsInMarkdown(
         : lintRules.unorderedListStyle === 'plus' ? '+'
         : '-';
 
-    const tableOfContentsConfig = {
-        maxDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
-        tight: true,
-    };
-
-    const unifiedMarkdownProcessor = unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .use(remarkToc, tableOfContentsConfig)
-        .use(remarkStringify, {
-            bullet: listBulletCharacter,
-            listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
-            incrementListMarker: false,
-        });
+    const unifiedMarkdownProcessor = createTableOfContentsProcessor({
+        maximumHeadingDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
+        listBulletCharacter,
+        listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
+    });
 
     try {
         const transformationResult = await unifiedMarkdownProcessor.process(documentContentWithTocPlaceholder);

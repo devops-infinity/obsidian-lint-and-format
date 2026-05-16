@@ -48,7 +48,7 @@ export interface UIConfig {
     };
 }
 
-export interface LintAdvancedConfig {
+export interface LintTuningConfig {
     brSpaces: number;
     maxBlankLines: number;
     headingLinesAbove: number;
@@ -84,7 +84,7 @@ export interface PluginSettings {
     lintRules: LintRules;
     postProcessingConfig: MarkdownPostProcessingConfig;
     uiConfig: UIConfig;
-    lintAdvancedConfig: LintAdvancedConfig;
+    lintTuningConfig: LintTuningConfig;
     designSystem: DesignSystem;
 }
 

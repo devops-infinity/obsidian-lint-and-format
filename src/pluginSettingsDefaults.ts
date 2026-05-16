@@ -53,7 +53,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
             idle: 0.8,
         },
     },
-    lintAdvancedConfig: {
+    lintTuningConfig: {
         brSpaces: 2,
         maxBlankLines: 1,
         headingLinesAbove: 1,

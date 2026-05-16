@@ -1,4 +1,5 @@
-import { Editor, MarkdownView, Notice, Plugin, TFile, setIcon } from 'obsidian';
+import { Editor, FileSystemAdapter, MarkdownView, Notice, Platform, Plugin, TFile, setIcon } from 'obsidian';
+import * as path from 'path';
 import type { PluginSettings, LintResult } from './core/interfaces';
 import { DEFAULT_SETTINGS } from './pluginSettingsDefaults';
 import { formatMarkdown } from './formatters/markdownFormatter';
@@ -6,6 +7,8 @@ import { registerHeroicons } from './utils/heroicons';
 import { LintValidationDialog } from './components/lintValidationDialog';
 import { LintAndFormatSettingTab } from './settings/pluginSettingsPanel';
 import { LintValidationService } from './services/lintValidationService';
+import { renderMarkdownToStandaloneHtml } from './formatters/markdownToHtmlPipeline';
+import { exportHtmlToPdf } from './services/pdfExportService';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
@@ -23,7 +26,7 @@ export default class LintAndFormatPlugin extends Plugin {
             this.settings.prettierConfig,
             this.settings.uiConfig.modalDisplayDelay,
             this.settings.uiConfig.maxAutoFixIterations,
-            this.settings.lintAdvancedConfig
+            this.settings.lintTuningConfig
         );
 
         registerHeroicons();
@@ -220,6 +223,53 @@ export default class LintAndFormatPlugin extends Plugin {
             },
         });
 
+        this.addCommand({
+            id: 'export-pdf-with-working-links',
+            name: 'Export to PDF (with working links)',
+            editorCallback: async (editor: Editor, view: MarkdownView) => {
+                if (!Platform.isDesktop) {
+                    new Notice('PDF export is only available on desktop Obsidian.');
+                    return;
+                }
+
+                const sourceFile = view.file;
+                if (!sourceFile) {
+                    new Notice('No active note to export.');
+                    return;
+                }
+
+                const vaultAdapter = this.app.vault.adapter;
+                if (!(vaultAdapter instanceof FileSystemAdapter)) {
+                    new Notice('PDF export requires a local filesystem vault.');
+                    return;
+                }
+
+                const markdownContent = editor.getValue();
+                const documentTitle = sourceFile.basename;
+                const exportingNotice = new Notice(`Exporting "${documentTitle}" to PDF...`, 0);
+
+                try {
+                    const standaloneHtml = await renderMarkdownToStandaloneHtml(markdownContent, { documentTitle });
+
+                    const vaultBasePath = vaultAdapter.getBasePath();
+                    const relativeOutputPath = sourceFile.path.replace(/\.(md|markdown|mdx)$/i, '.pdf');
+                    const absoluteOutputPath = path.join(vaultBasePath, relativeOutputPath);
+
+                    const exportResult = await exportHtmlToPdf({
+                        htmlContent: standaloneHtml,
+                        outputPath: absoluteOutputPath,
+                    });
+
+                    exportingNotice.hide();
+                    new Notice(`PDF exported: ${path.basename(exportResult.outputPath)} (${formatByteSize(exportResult.sizeBytes)})`);
+                } catch (pdfExportError) {
+                    exportingNotice.hide();
+                    const errorMessage = pdfExportError instanceof Error ? pdfExportError.message : String(pdfExportError);
+                    new Notice(`PDF export failed: ${errorMessage}`);
+                }
+            },
+        });
+
         this.addSettingTab(new LintAndFormatSettingTab(this.app, this));
 
         if (this.settings.formatOnSave) {
@@ -290,7 +340,12 @@ export default class LintAndFormatPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const persistedSettings = (await this.loadData()) as Record<string, unknown> | null;
+        if (persistedSettings && 'lintAdvancedConfig' in persistedSettings && !('lintTuningConfig' in persistedSettings)) {
+            persistedSettings.lintTuningConfig = persistedSettings.lintAdvancedConfig;
+            delete persistedSettings.lintAdvancedConfig;
+        }
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, persistedSettings);
     }
 
     async saveSettings() {
@@ -436,4 +491,10 @@ export default class LintAndFormatPlugin extends Plugin {
                 break;
         }
     }
+}
+
+function formatByteSize(byteCount: number): string {
+    if (byteCount < 1024) return `${byteCount} B`;
+    if (byteCount < 1024 * 1024) return `${(byteCount / 1024).toFixed(1)} KB`;
+    return `${(byteCount / (1024 * 1024)).toFixed(2)} MB`;
 }

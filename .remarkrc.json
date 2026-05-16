@@ -1,0 +1,29 @@
+{
+    "plugins": [
+        "frontmatter",
+        "gfm",
+        "math",
+        "preset-lint-recommended",
+        "preset-lint-consistent",
+        ["remark-lint-no-undefined-references", {
+            "allow": ["!NOTE", "!TIP", "!IMPORTANT", "!WARNING", "!CAUTION", "!DANGER"]
+        }],
+        ["remark-lint-heading-style", "atx"],
+        ["remark-lint-maximum-heading-length", 80],
+        "remark-lint-no-duplicate-headings-in-section",
+        "remark-lint-no-empty-url",
+        "preset-prettier",
+        ["stringify", {
+            "bullet": "-",
+            "emphasis": "_",
+            "strong": "*",
+            "fence": "`",
+            "fences": true,
+            "incrementListMarker": true,
+            "listItemIndent": "one",
+            "rule": "-",
+            "ruleRepetition": 3,
+            "ruleSpaces": false
+        }]
+    ]
+}
