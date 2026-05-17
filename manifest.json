@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-lint-and-format",
 	"name": "Lint & Format",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"minAppVersion": "0.15.0",
 	"description": "Keep your Obsidian notes clean and consistent with professional markdown linting and formatting",
 	"author": "Md. Sazzad Hossain Sharkar",
