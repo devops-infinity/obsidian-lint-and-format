@@ -266,6 +266,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     const exportResult = await exportHtmlToPdf({
                         htmlContent: standaloneHtml,
                         outputPath: absoluteOutputPath,
+                        vaultBasePath,
                         pdfConfig: this.settings.pdfExportConfig,
                     });
 

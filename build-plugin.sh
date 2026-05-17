@@ -70,7 +70,7 @@ spinner_start() {
       fi
       printf '\r%s[INFO]%s %s %s ' "${COLOR_INFO}" "${COLOR_RESET}" "${frame}" "${message}"
       sleep 0.1
-      ((i++))
+      i=$((i + 1))
     done
   ) &
   SPINNER_PID=$!
@@ -199,6 +199,7 @@ relocate_node_modules_if_inside_icloud() {
     ln -s "${cache_root}/node_modules" "${REPO_ROOT}/node_modules"
     log_success "node_modules relocated and symlinked"
   else
+    mkdir -p "${cache_root}/node_modules"
     ln -s "${cache_root}/node_modules" "${REPO_ROOT}/node_modules"
     log_info "Created node_modules symlink to ${cache_root}/node_modules"
   fi

@@ -844,16 +844,6 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName('Prettier preset')
-            .setDesc('Enables remark-preset-prettier (style rules aligned with Prettier)')
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.remarkLintConfig.enablePrettierPreset).onChange(async (value) => {
-                    this.plugin.settings.remarkLintConfig.enablePrettierPreset = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(containerEl)
             .setName('Heading style rule')
             .setDesc('Enforce ATX-style headings (# ...)')
             .addToggle((toggle) =>

@@ -83,7 +83,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     remarkLintConfig: {
         enableRecommendedPreset: true,
         enableConsistentPreset: true,
-        enablePrettierPreset: true,
         enableHeadingStyleRule: true,
         enableMaxHeadingLengthRule: true,
         maxHeadingLength: 80,

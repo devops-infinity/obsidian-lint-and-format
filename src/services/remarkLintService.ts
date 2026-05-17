@@ -1,5 +1,6 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
+import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkPresetLintRecommended from 'remark-preset-lint-recommended';
@@ -58,6 +59,8 @@ export async function runRemarkLint(
             allow: ['!NOTE', '!TIP', '!IMPORTANT', '!WARNING', '!CAUTION', '!DANGER'],
         });
     }
+
+    processor = processor.use(remarkStringify);
 
     const transformedFile = await processor.process(markdownContent);
 

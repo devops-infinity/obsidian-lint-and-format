@@ -104,7 +104,6 @@ export interface MarkdownRenderingConfig {
 export interface RemarkLintConfig {
     enableRecommendedPreset: boolean;
     enableConsistentPreset: boolean;
-    enablePrettierPreset: boolean;
     enableHeadingStyleRule: boolean;
     enableMaxHeadingLengthRule: boolean;
     maxHeadingLength: number;
