@@ -17,6 +17,11 @@ Keep your Obsidian notes clean and consistent with professional markdown linting
         - [Flexible Configuration](#flexible-configuration)
         - [YAML Front Matter Support](#yaml-front-matter-support)
         - [Multiple File Types](#multiple-file-types)
+        - [Table of Contents Generation](#table-of-contents-generation)
+        - [GitHub-Style Alerts](#github-style-alerts)
+        - [Math Rendering with KaTeX](#math-rendering-with-katex)
+        - [PDF Export with Working Links](#pdf-export-with-working-links)
+        - [Remark Lint Presets](#remark-lint-presets)
     - [Installation](#installation)
         - [From Obsidian Community Plugins (Recommended)](#from-obsidian-community-plugins-recommended)
         - [Manual Installation](#manual-installation)
@@ -28,6 +33,11 @@ Keep your Obsidian notes clean and consistent with professional markdown linting
             - [Format Settings](#format-settings)
             - [Advanced Settings](#advanced-settings)
             - [Lint Rules](#lint-rules)
+            - [Table of Contents Settings](#table-of-contents-settings)
+            - [PDF Export Settings](#pdf-export-settings)
+            - [Markdown Rendering Settings](#markdown-rendering-settings)
+            - [Remark Lint Settings](#remark-lint-settings)
+            - [Design System Settings](#design-system-settings)
     - [Tips \& Best Practices](#tips--best-practices)
         - [Start Simple](#start-simple)
         - [Use Format on Save](#use-format-on-save)
@@ -153,6 +163,44 @@ Works with all your markdown files:
 - `.markdown` - Alternative extension
 - `.mdx` - Markdown with JSX
 
+### Table of Contents Generation
+
+Generate a table of contents from your headings without leaving the editor:
+
+- Configurable depth and position (after front matter, top of file, or replacing a marker)
+- All-bulleted or mixed ordered/unordered list styles
+- Custom unordered and ordered marker characters
+- Tight or loose list spacing
+
+### GitHub-Style Alerts
+
+Render and preserve GitHub-style alert syntax (`> [!NOTE]`, `> [!WARNING]`, etc.) when exporting or rendering markdown, so callouts survive the round trip.
+
+### Math Rendering with KaTeX
+
+Inline and block math expressions are rendered with KaTeX in the PDF export pipeline, with the KaTeX stylesheet bundled into the plugin so exports stay self-contained.
+
+### PDF Export with Working Links
+
+Export the current note to a polished PDF that retains internal anchors and external links:
+
+- Desktop-only (uses Electron's offscreen `BrowserWindow`)
+- A4 page size by default, with optional landscape orientation
+- Background printing enabled by default for full-color fidelity
+- Optional heading anchor markers in the rendered output
+- Custom stylesheet override via a vault-relative path
+- Bundled KaTeX stylesheet for math rendering
+- Output is written next to the source note with the `.pdf` extension
+
+### Remark Lint Presets
+
+Run a second, AST-driven lint pass powered by `unified` and `remark-lint`:
+
+- Toggle the recommended and consistent presets independently
+- Enable or disable individual rules: heading style, maximum heading length, duplicate headings in section, empty URLs, undefined references
+- Configurable maximum heading length
+- Reports show the first few issues inline as a notice
+
 ## Installation
 
 ### From Obsidian Community Plugins (Recommended)
@@ -185,17 +233,31 @@ Works with all your markdown files:
 3. Search for and run one of these commands:
     - **Format Document** - Format with Prettier
     - **Lint Document** - Check for style issues
-    - **Lint and Auto-Fix** - Fix issues automatically
-    - **Format and Lint** - Format then check for issues
+    - **Lint and Auto-Fix Document** - Fix issues automatically
+    - **Format and Lint Document** - Format then check for issues
+    - **Export to PDF (with working links)** - Render the note to a PDF
+    - **Lint with remark presets** - Run the remark-lint pass
 
 ### Available Commands
 
-| Command               | Description                                       | Keyboard Shortcut |
-| --------------------- | ------------------------------------------------- | ----------------- |
-| **Format Document**   | Apply Prettier formatting to current file         | Set in Settings   |
-| **Lint Document**     | Show all linting issues with detailed information | Set in Settings   |
-| **Lint and Auto-Fix** | Automatically fix all fixable linting issues      | Set in Settings   |
-| **Format and Lint**   | Run formatting and linting together               | Set in Settings   |
+- **Format Document**
+    - Description: Apply Prettier formatting to the current file
+    - Keyboard shortcut: Set in Settings
+- **Lint Document**
+    - Description: Show all linting issues with detailed information
+    - Keyboard shortcut: Set in Settings
+- **Lint and Auto-Fix Document**
+    - Description: Automatically fix all fixable linting issues
+    - Keyboard shortcut: Set in Settings
+- **Format and Lint Document**
+    - Description: Run formatting and linting together
+    - Keyboard shortcut: Set in Settings
+- **Export to PDF (with working links)**
+    - Description: Export the current note to a PDF with preserved links (desktop only)
+    - Keyboard shortcut: Set in Settings
+- **Lint with remark presets**
+    - Description: Run a remark-lint pass with the configured presets and rules
+    - Keyboard shortcut: Set in Settings
 
 ### Configuration
 
@@ -203,10 +265,11 @@ Access settings through **Settings → Community Plugins → Lint & Format**
 
 #### General Settings
 
-- **Enable auto-formatting** - Lets the plugin format your documents
-- **Enable linting** - Lets the plugin check for style issues
-- **Format on save** - Formats automatically when you save files
-- **Show lint errors** - Shows notifications when there are lint issues
+- **Enable auto-formatting** - Lets the plugin format your documents (default: enabled)
+- **Enable linting** - Lets the plugin check for style issues (default: enabled)
+- **Format on save** - Formats automatically when you save files (default: disabled)
+- **Show lint errors** - Shows notifications when there are lint issues (default: enabled)
+- **Auto-fix lint issues** - Apply fixable lint corrections automatically during the Format and Lint command (default: enabled)
 
 #### Format Settings
 
@@ -274,6 +337,55 @@ Choose which style rules you want to enforce (all are enabled by default unless 
 - Requires blank line after headings (enabled)
 - Emphasis marker style (default: consistent)
 - Bold marker style (default: consistent)
+
+#### Table of Contents Settings
+
+Control how the TOC is generated when `Enable TOC generation` is on:
+
+- **List Style** - All bulleted, all ordered, or mixed (default: all-bulleted)
+- **Ordered Depth** - Heading depth at which ordered numbering kicks in for mixed mode (default: 1)
+- **Unordered Marker** - Character used for unordered TOC items (default: `-`)
+- **Ordered Marker** - Suffix used for ordered TOC items (default: `.`)
+- **Tight Spacing** - Removes blank lines between TOC items (default: enabled)
+
+#### PDF Export Settings
+
+Configure how notes are rendered when using **Export to PDF**:
+
+- **Page Size** - Page size for the PDF (default: A4)
+- **Landscape** - Switch to landscape orientation (default: disabled)
+- **Print Background** - Print background colors and images (default: enabled)
+- **Show Heading Anchors** - Render anchor markers next to headings in the PDF (default: disabled)
+- **KaTeX CSS Source** - Use the bundled KaTeX stylesheet or a custom source (default: bundled)
+- **Custom Stylesheet Path** - Vault-relative path to a CSS file applied on top of the built-in PDF stylesheet (default: empty)
+
+#### Markdown Rendering Settings
+
+Toggle features used by the PDF export pipeline:
+
+- **Enable GitHub Alerts** - Render `> [!NOTE]`-style alerts (default: enabled)
+- **Enable Math Rendering** - Render inline and block math via KaTeX (default: enabled)
+
+#### Remark Lint Settings
+
+Configure the secondary remark-based linter run by **Lint with remark presets**:
+
+- **Enable Recommended Preset** - Apply `remark-preset-lint-recommended` (default: enabled)
+- **Enable Consistent Preset** - Apply `remark-preset-lint-consistent` (default: enabled)
+- **Enable Heading Style Rule** - Check ATX vs. setext heading style (default: enabled)
+- **Enable Max Heading Length Rule** - Flag overly long headings (default: enabled)
+- **Maximum Heading Length** - Maximum characters allowed in a heading (default: 80)
+- **Enable No Duplicate Headings Rule** - Disallow duplicate headings within a section (default: enabled)
+- **Enable No Empty URL Rule** - Disallow empty link destinations (default: enabled)
+- **Enable No Undefined References Rule** - Disallow references that don't resolve (default: enabled)
+
+#### Design System Settings
+
+Fine-tune the visual tokens used by plugin dialogs and panels:
+
+- **Font Sizes** - Small, medium, and large font scales (defaults: 0.9em, 1em, 1.1em)
+- **Spacing** - Padding for buttons, tabs, and badges (defaults: `8px 16px`, `12px 24px`, `2px 8px`)
+- **Animation** - Transition duration and easing for UI motion (defaults: 0.2s, ease)
 
 ## Tips & Best Practices
 
@@ -404,44 +516,63 @@ After the script completes, open Obsidian → Settings → Community plugins, th
 
 ```md
 obsidian-lint-and-format/
-├── src/ # Source files
-│ ├── core/ # Core interfaces and types
-│ │ └── interfaces.ts # TypeScript interfaces
-│ ├── formatters/ # Formatting modules
-│ │ ├── fencedCodeBlockFormatter.ts
-│ │ ├── markdownFormatter.ts
-│ │ ├── markdownListNormalizer.ts
-│ │ ├── markdownPostProcessingPipeline.ts
-│ │ └── tableOfContentsBuilder.ts
-│ ├── parsers/ # Parser modules
-│ │ └── yamlFrontMatterParser.ts
-│ ├── services/ # Service layer
-│ │ └── lintValidationService.ts
-│ ├── settings/ # Settings UI
-│ │ └── pluginSettingsPanel.ts
-│ ├── ui/ # UI components
-│ ├── utils/ # Utility functions
-│ │ ├── markdownlintAdapter.ts
-│ │ ├── prettierConfig.ts
-│ │ └── codeLanguages.ts
-│ ├── main.ts # Plugin entry point
-│ └── pluginSettingsDefaults.ts # Default settings
-├── docs/ # Documentation files
-├── manifest.json # Plugin manifest
-├── package.json # NPM dependencies
-├── tsconfig.json # TypeScript configuration
-└── README.md # This file
+├── src/                              # Source files
+│   ├── core/                         # Core interfaces and types
+│   │   └── interfaces.ts             # TypeScript interfaces
+│   ├── components/                   # React TSX components
+│   │   ├── lintValidationDialog.tsx
+│   │   └── lintValidationPanel.tsx
+│   ├── formatters/                   # Formatting and rendering modules
+│   │   ├── fencedCodeBlockFormatter.ts
+│   │   ├── markdownFormatter.ts
+│   │   ├── markdownListNormalizer.ts
+│   │   ├── markdownPostProcessingPipeline.ts
+│   │   ├── markdownToHtmlPipeline.ts
+│   │   ├── remarkGithubAlerts.ts
+│   │   ├── remarkTocListStyle.ts
+│   │   ├── tableOfContentsBuilder.ts
+│   │   └── unifiedProcessorFactory.ts
+│   ├── parsers/                      # Parser modules
+│   │   └── yamlFrontMatterParser.ts
+│   ├── services/                     # Service layer
+│   │   ├── katexStylesheet.ts
+│   │   ├── lintValidationService.ts
+│   │   ├── pdfExportService.ts
+│   │   ├── pdfStylesheet.ts
+│   │   └── remarkLintService.ts
+│   ├── settings/                     # Settings UI
+│   │   └── pluginSettingsPanel.ts
+│   ├── utils/                        # Utility helpers
+│   │   ├── codeLanguages.ts
+│   │   ├── designTokens.ts
+│   │   ├── heroicons.ts
+│   │   ├── markdownlintAdapter.ts
+│   │   ├── prettierConfig.ts
+│   │   └── severityHelpers.tsx
+│   ├── global.d.ts                   # Global type declarations
+│   ├── main.ts                       # Plugin entry point
+│   └── pluginSettingsDefaults.ts     # Default settings
+├── .github/workflows/                # CI release pipeline
+├── build-plugin.sh                   # One-shot setup script
+├── esbuild.config.mjs                # Bundler configuration
+├── manifest.json                     # Plugin manifest
+├── package.json                      # NPM dependencies and scripts
+├── styles.css                        # Plugin styles
+├── tsconfig.json                     # TypeScript configuration
+└── README.md                         # This file
 ```
 
 ### Available Scripts
 
-- **npm run build** - Build for production (creates optimized `main.js`)
 - **npm run dev** - Build with watch mode for development
-- **npm run typecheck** - Run TypeScript type checking
-- **npm run lint** - Run ESLint to check code quality
-- **npm run format** - Format code with Prettier
-- **npm run lint:md** - Run markdown linter on all .md files
-- **npm run lint:md:fix** - Automatically fix markdown issues
+- **npm run build** - Run a TypeScript check and produce a production `main.js`
+- **npm run setup** - One-shot install plus build via `build-plugin.sh`
+- **npm run version** - Bump versions across `manifest.json` and `versions.json`
+- **npm run lint:md** - Run `markdownlint-cli2` against all tracked Markdown files
+- **npm run lint:md:fix** - Auto-fix Markdown lint issues
+- **npm run lint:remark** - Run a strict `remark-cli` lint pass
+- **npm run lint:remark:fix** - Apply `remark-cli` auto-fixes in place
+- **npm run precommit** - Pre-commit hook that runs `lint:md:fix`
 
 ### Development Workflow
 
@@ -484,9 +615,14 @@ The plugin follows enterprise-grade architecture patterns:
 
 - **TypeScript** - Type-safe development
 - **Obsidian API** - Plugin API for Obsidian integration
-- **Prettier** - Markdown formatting engine (v3.4.2+)
-- **markdownlint** - Linting engine (v0.38.0+)
-- **unified/remark** - Markdown AST processing for TOC and lists
+- **React 19** - UI framework for dialogs and panels (TSX components)
+- **Prettier** - Markdown formatting engine (v3.6.2+)
+- **markdownlint** - Primary linting engine (v0.38.0+)
+- **unified / remark / rehype** - Markdown AST processing for formatting, linting, TOC, GitHub alerts, and HTML rendering
+- **KaTeX** (via `rehype-katex`) - Math rendering in the PDF export pipeline
+- **Heroicons** - Theme-aware iconography
+- **esbuild** - Bundler that emits the production `main.js`
+- **semantic-release** - Fully automated release pipeline
 
 ### Testing
 

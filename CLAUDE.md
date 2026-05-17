@@ -52,16 +52,69 @@ npm run build
 
 After a successful build, in Obsidian: Settings → Community plugins → toggle "Lint & Format" off and back on. This forces Obsidian to reload the freshly built `main.js`.
 
+## Directory Structure
+
+- `src/` - TypeScript source
+- `src/core/` - Shared type interfaces
+- `src/components/` - React TSX dialogs and panels
+- `src/formatters/` - Markdown formatting and HTML rendering pipeline
+- `src/parsers/` - YAML front-matter parser
+- `src/services/` - Lint, PDF export, KaTeX, and remark services
+- `src/settings/` - Settings panel UI
+- `src/utils/` - Heroicons, design tokens, prettier/markdownlint adapters
+- `.github/workflows/` - CI release pipeline
+
 ## Key Files
 
-| Path | Purpose |
-| --- | --- |
-| `manifest.json` | Obsidian plugin metadata (id, name, version, minAppVersion) |
-| `src/main.ts` | TypeScript entry point |
-| `esbuild.config.mjs` | Bundler configuration; emits `main.js` at the repo root |
-| `build-plugin.sh` | One-shot setup script at the repository root |
-| `main.js` | Generated bundle; required by Obsidian for plugin load |
-| `package.json` | Scripts: `dev`, `build`, `setup`, `version`, `lint:md`, `lint:md:fix`, `precommit` |
+- `src/main.ts` - Plugin entry point and command registration
+- `src/pluginSettingsDefaults.ts` - Default plugin settings
+- `src/global.d.ts` - Global type declarations
+- `src/core/interfaces.ts` - Settings, lint result, and config types
+- `src/components/lintValidationDialog.tsx` - Lint result modal
+- `src/components/lintValidationPanel.tsx` - Lint result panel content
+- `src/formatters/markdownFormatter.ts` - Prettier-based formatter
+- `src/formatters/markdownPostProcessingPipeline.ts` - Post-format processing
+- `src/formatters/markdownToHtmlPipeline.ts` - HTML rendering pipeline for PDF export
+- `src/formatters/markdownListNormalizer.ts` - List normalization
+- `src/formatters/fencedCodeBlockFormatter.ts` - Code fence normalization
+- `src/formatters/tableOfContentsBuilder.ts` - TOC generation
+- `src/formatters/remarkGithubAlerts.ts` - GitHub alert syntax plugin
+- `src/formatters/remarkTocListStyle.ts` - TOC list style plugin
+- `src/formatters/unifiedProcessorFactory.ts` - Unified processor builder
+- `src/parsers/yamlFrontMatterParser.ts` - YAML front-matter parser
+- `src/services/lintValidationService.ts` - Markdownlint orchestration
+- `src/services/remarkLintService.ts` - Remark preset linter
+- `src/services/pdfExportService.ts` - Electron-based PDF export
+- `src/services/pdfStylesheet.ts` - PDF stylesheet content
+- `src/services/katexStylesheet.ts` - KaTeX stylesheet content
+- `src/settings/pluginSettingsPanel.ts` - Settings UI
+- `src/utils/heroicons.ts` - Heroicons registration
+- `src/utils/designTokens.ts` - Design system tokens
+- `src/utils/codeLanguages.ts` - Supported code languages
+- `src/utils/markdownlintAdapter.ts` - Markdownlint adapter
+- `src/utils/prettierConfig.ts` - Default prettier config
+- `src/utils/severityHelpers.tsx` - Severity icon helpers
+- `manifest.json` - Obsidian plugin metadata
+- `esbuild.config.mjs` - Bundler configuration
+- `build-plugin.sh` - One-shot setup script
+- `main.js` - Generated bundle (required by Obsidian)
+- `styles.css` - Plugin styles
+- `package.json` - Scripts: `dev`, `build`, `setup`, `version`, `lint:md`, `lint:md:fix`, `lint:remark`, `lint:remark:fix`, `precommit`
+
+## Configuration
+
+- `.editorconfig` - Editor settings
+- `.eslintrc` - ESLint configuration
+- `.eslintignore` - ESLint ignore patterns
+- `.prettierrc.json` - Prettier configuration
+- `.markdownlint.json` - Markdownlint rules
+- `.markdownlint-cli2.jsonc` - Markdownlint CLI configuration
+- `.remarkrc.json` - Remark configuration
+- `.releaserc.json` - Semantic-release configuration
+- `.github/workflows/release.yml` - Release workflow
+- `tsconfig.json` - TypeScript configuration
+- `versions.json` - Obsidian min-app-version map
+- `version-bump.mjs` - Version bump helper
 
 ## Authorship & Authorization
 
