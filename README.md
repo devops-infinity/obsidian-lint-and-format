@@ -511,7 +511,7 @@ Before you submit changes:
 
 When you submit a pull request:
 
-1. Create a feature branch from `master`
+1. Create a feature branch from `main`
 2. Follow the existing code style
 3. Update documentation if needed
 4. Test everything thoroughly before submitting
