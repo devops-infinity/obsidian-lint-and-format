@@ -1,8 +1,12 @@
 import { createMarkdownToHtmlProcessor } from './unifiedProcessorFactory';
 import { pdfStylesheet } from '../services/pdfStylesheet';
+import type { MarkdownRenderingConfig, PdfExportConfig } from '../core/interfaces';
 
 export interface RenderToHtmlOptions {
     documentTitle: string;
+    renderingConfig: MarkdownRenderingConfig;
+    pdfExportConfig: PdfExportConfig;
+    customStylesheetContent: string;
 }
 
 export async function renderMarkdownToStandaloneHtml(
@@ -11,8 +15,10 @@ export async function renderMarkdownToStandaloneHtml(
 ): Promise<string> {
     const processor = createMarkdownToHtmlProcessor({
         documentTitle: options.documentTitle,
-        inlineStylesheet: pdfStylesheet,
-        headingAnchorBehavior: 'prepend',
+        pageStylesheet: pdfStylesheet,
+        customStylesheet: options.customStylesheetContent,
+        renderingConfig: options.renderingConfig,
+        pdfExportConfig: options.pdfExportConfig,
     });
 
     const transformedFile = await processor.process(markdownContent);

@@ -74,6 +74,45 @@ export interface DesignSystem {
     };
 }
 
+export type TocListStyleStrategy = 'all-bulleted' | 'all-numbered' | 'mixed-top-numbered' | 'numbered-until-depth';
+
+export interface TocConfig {
+    listStyle: TocListStyleStrategy;
+    orderedDepth: number;
+    unorderedMarker: '-' | '*' | '+';
+    orderedMarker: '.' | ')';
+    tight: boolean;
+}
+
+export type PdfPageSize = 'A4' | 'Letter' | 'Legal' | 'Tabloid';
+export type KatexCssSource = 'bundled' | 'cdn' | 'disabled';
+
+export interface PdfExportConfig {
+    pageSize: PdfPageSize;
+    landscape: boolean;
+    printBackground: boolean;
+    showHeadingAnchors: boolean;
+    katexCssSource: KatexCssSource;
+    customStylesheetPath: string;
+}
+
+export interface MarkdownRenderingConfig {
+    enableGithubAlerts: boolean;
+    enableMathRendering: boolean;
+}
+
+export interface RemarkLintConfig {
+    enableRecommendedPreset: boolean;
+    enableConsistentPreset: boolean;
+    enablePrettierPreset: boolean;
+    enableHeadingStyleRule: boolean;
+    enableMaxHeadingLengthRule: boolean;
+    maxHeadingLength: number;
+    enableNoDuplicateHeadingsRule: boolean;
+    enableNoEmptyUrlRule: boolean;
+    enableNoUndefinedReferencesRule: boolean;
+}
+
 export interface PluginSettings {
     enableAutoFormat: boolean;
     enableLinting: boolean;
@@ -85,6 +124,10 @@ export interface PluginSettings {
     postProcessingConfig: MarkdownPostProcessingConfig;
     uiConfig: UIConfig;
     lintTuningConfig: LintTuningConfig;
+    tocConfig: TocConfig;
+    pdfExportConfig: PdfExportConfig;
+    markdownRenderingConfig: MarkdownRenderingConfig;
+    remarkLintConfig: RemarkLintConfig;
     designSystem: DesignSystem;
 }
 

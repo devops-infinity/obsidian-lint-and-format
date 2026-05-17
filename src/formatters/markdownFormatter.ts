@@ -1,20 +1,21 @@
 import * as prettier from 'prettier';
 import * as prettierPluginMarkdown from 'prettier/plugins/markdown';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
-import type { FormatResult, MarkdownPostProcessingConfig, LintRules } from '../core/interfaces';
+import type { FormatResult, MarkdownPostProcessingConfig, LintRules, TocConfig } from '../core/interfaces';
 import { applyMarkdownPostProcessing } from './markdownPostProcessingPipeline';
 
 export async function formatMarkdown(
     documentContent: string,
     prettierConfig: PrettierMarkdownConfig,
     lintRules: LintRules,
-    postProcessingConfig?: MarkdownPostProcessingConfig
+    postProcessingConfig: MarkdownPostProcessingConfig | undefined,
+    tocConfig: TocConfig
 ): Promise<FormatResult> {
     try {
         let workingContent = documentContent;
 
         if (postProcessingConfig) {
-            const postProcessingResult = await applyMarkdownPostProcessing(workingContent, postProcessingConfig, prettierConfig, lintRules);
+            const postProcessingResult = await applyMarkdownPostProcessing(workingContent, postProcessingConfig, prettierConfig, lintRules, tocConfig);
             if (postProcessingResult.error) {
                 return {
                     formatted: false,

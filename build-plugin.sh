@@ -179,6 +179,31 @@ human_size() {
   du -h "${file}" 2>/dev/null | cut -f1
 }
 
+relocate_node_modules_if_inside_icloud() {
+  local plugin_path="${REPO_ROOT}"
+  if [[ "${plugin_path}" != *"/Documents/"* ]] && [[ "${plugin_path}" != *"/Desktop/"* ]]; then
+    return 0
+  fi
+
+  if [[ -L "${REPO_ROOT}/node_modules" ]]; then
+    log_info "node_modules already symlinked (outside iCloud sync path)"
+    return 0
+  fi
+
+  local cache_root="${HOME}/Library/Caches/obsidian-lint-and-format-build"
+  mkdir -p "${cache_root}"
+
+  if [[ -d "${REPO_ROOT}/node_modules" ]]; then
+    log_warn "node_modules is inside iCloud-synced Documents — relocating to ${cache_root}"
+    mv "${REPO_ROOT}/node_modules" "${cache_root}/node_modules"
+    ln -s "${cache_root}/node_modules" "${REPO_ROOT}/node_modules"
+    log_success "node_modules relocated and symlinked"
+  else
+    ln -s "${cache_root}/node_modules" "${REPO_ROOT}/node_modules"
+    log_info "Created node_modules symlink to ${cache_root}/node_modules"
+  fi
+}
+
 main() {
   cd "${REPO_ROOT}"
 
@@ -197,8 +222,12 @@ main() {
   log_info "Node.js: ${node_version}"
   log_info "npm: ${npm_version}"
 
+  relocate_node_modules_if_inside_icloud
+
   local needs_install=0
-  if [[ ! -d "${REPO_ROOT}/node_modules" ]]; then
+  if [[ ! -e "${REPO_ROOT}/node_modules" ]]; then
+    needs_install=1
+  elif [[ -L "${REPO_ROOT}/node_modules" ]] && [[ ! -d "$(readlink "${REPO_ROOT}/node_modules")" ]]; then
     needs_install=1
   elif [[ -f "${REPO_ROOT}/package-lock.json" ]] && is_newer_than_dir "${REPO_ROOT}/package-lock.json" "${REPO_ROOT}/node_modules"; then
     needs_install=1

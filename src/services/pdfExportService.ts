@@ -1,13 +1,12 @@
 import { Platform } from 'obsidian';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import type { PdfExportConfig } from '../core/interfaces';
 
 export interface PdfExportOptions {
     htmlContent: string;
     outputPath: string;
-    pageSize?: 'A4' | 'Letter' | 'Legal' | 'Tabloid';
-    printBackground?: boolean;
-    landscape?: boolean;
+    pdfConfig: PdfExportConfig;
     waitForResourcesMs?: number;
 }
 
@@ -45,9 +44,9 @@ export async function exportHtmlToPdf(options: PdfExportOptions): Promise<PdfExp
         await new Promise<void>((resolve) => setTimeout(resolve, options.waitForResourcesMs ?? 750));
 
         const pdfBuffer: Buffer = await window.webContents.printToPDF({
-            pageSize: options.pageSize ?? 'A4',
-            printBackground: options.printBackground ?? true,
-            landscape: options.landscape ?? false,
+            pageSize: options.pdfConfig.pageSize,
+            printBackground: options.pdfConfig.printBackground,
+            landscape: options.pdfConfig.landscape,
         });
 
         const outputDirectory = path.dirname(options.outputPath);

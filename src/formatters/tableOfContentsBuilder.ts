@@ -1,4 +1,4 @@
-import type { LintRules } from '../core/interfaces';
+import type { TocConfig } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { extractFrontMatter, reconstructWithFrontMatter, validateYAMLFrontMatter } from '../parsers/yamlFrontMatterParser';
 import { createTableOfContentsProcessor } from './unifiedProcessorFactory';
@@ -7,7 +7,7 @@ export async function buildTableOfContentsInMarkdown(
     documentContent: string,
     maximumHeadingDepth: number,
     insertionPosition: 'top' | 'after-frontmatter',
-    lintRules: LintRules,
+    tocConfig: TocConfig,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
     const { frontMatter, body: documentBodyWithoutFrontMatter, hasFrontMatter } = extractFrontMatter(documentContent);
@@ -33,13 +33,9 @@ export async function buildTableOfContentsInMarkdown(
         }
     }
 
-    const listBulletCharacter = lintRules.unorderedListStyle === 'asterisk' ? '*'
-        : lintRules.unorderedListStyle === 'plus' ? '+'
-        : '-';
-
     const unifiedMarkdownProcessor = createTableOfContentsProcessor({
         maximumHeadingDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
-        listBulletCharacter,
+        tocConfig,
         listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
     });
 
@@ -63,7 +59,7 @@ export function removeExistingTableOfContents(documentContent: string): string {
         }
     }
 
-    const tableOfContentsSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?)+/im;
+    const tableOfContentsSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?|\d+[.)]\s+.*\n?)+/im;
     const documentContentWithoutToc = documentBodyWithoutFrontMatter.replace(tableOfContentsSectionPattern, '');
 
     return reconstructWithFrontMatter(frontMatter, documentContentWithoutToc);

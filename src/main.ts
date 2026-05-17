@@ -9,6 +9,7 @@ import { LintAndFormatSettingTab } from './settings/pluginSettingsPanel';
 import { LintValidationService } from './services/lintValidationService';
 import { renderMarkdownToStandaloneHtml } from './formatters/markdownToHtmlPipeline';
 import { exportHtmlToPdf } from './services/pdfExportService';
+import { runRemarkLint } from './services/remarkLintService';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
@@ -55,7 +56,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const currentMarkdownContent = editor.getValue();
-                const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                 if (formatOperationResult.error) {
                     new Notice(`Formatting error: ${formatOperationResult.error}`);
@@ -147,7 +148,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 let formattedMarkdownContent = currentMarkdownContent;
 
                 if (this.settings.enableAutoFormat) {
-                    const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                    const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                     if (formatOperationResult.error) {
                         new Notice(`Formatting error: ${formatOperationResult.error}`);
@@ -249,7 +250,14 @@ export default class LintAndFormatPlugin extends Plugin {
                 const exportingNotice = new Notice(`Exporting "${documentTitle}" to PDF...`, 0);
 
                 try {
-                    const standaloneHtml = await renderMarkdownToStandaloneHtml(markdownContent, { documentTitle });
+                    const customStylesheetContent = await this.readCustomStylesheet();
+
+                    const standaloneHtml = await renderMarkdownToStandaloneHtml(markdownContent, {
+                        documentTitle,
+                        renderingConfig: this.settings.markdownRenderingConfig,
+                        pdfExportConfig: this.settings.pdfExportConfig,
+                        customStylesheetContent,
+                    });
 
                     const vaultBasePath = vaultAdapter.getBasePath();
                     const relativeOutputPath = sourceFile.path.replace(/\.(md|markdown|mdx)$/i, '.pdf');
@@ -258,6 +266,7 @@ export default class LintAndFormatPlugin extends Plugin {
                     const exportResult = await exportHtmlToPdf({
                         htmlContent: standaloneHtml,
                         outputPath: absoluteOutputPath,
+                        pdfConfig: this.settings.pdfExportConfig,
                     });
 
                     exportingNotice.hide();
@@ -266,6 +275,35 @@ export default class LintAndFormatPlugin extends Plugin {
                     exportingNotice.hide();
                     const errorMessage = pdfExportError instanceof Error ? pdfExportError.message : String(pdfExportError);
                     new Notice(`PDF export failed: ${errorMessage}`);
+                }
+            },
+        });
+
+        this.addCommand({
+            id: 'lint-with-remark-presets',
+            name: 'Lint with remark presets',
+            editorCallback: async (editor: Editor, _view: MarkdownView) => {
+                const markdownContent = editor.getValue();
+                const lintingNotice = new Notice('Running remark lint...', 0);
+
+                try {
+                    const remarkReport = await runRemarkLint(markdownContent, this.settings.remarkLintConfig);
+                    lintingNotice.hide();
+
+                    if (remarkReport.totalMessages === 0) {
+                        new Notice('Remark lint: no issues found.');
+                        return;
+                    }
+
+                    const headline = `Remark lint: ${remarkReport.errorCount} error(s), ${remarkReport.warningCount} warning(s)`;
+                    const preview = remarkReport.messages.slice(0, 5)
+                        .map((issue) => `L${issue.line}: ${issue.rule} — ${issue.message}`)
+                        .join('\n');
+                    new Notice(`${headline}\n${preview}${remarkReport.messages.length > 5 ? `\n…+${remarkReport.messages.length - 5} more` : ''}`, 8000);
+                } catch (remarkLintError) {
+                    lintingNotice.hide();
+                    const errorMessage = remarkLintError instanceof Error ? remarkLintError.message : String(remarkLintError);
+                    new Notice(`Remark lint failed: ${errorMessage}`);
                 }
             },
         });
@@ -294,7 +332,7 @@ export default class LintAndFormatPlugin extends Plugin {
                         const scrollInfo = editor.getScrollInfo();
 
                         const currentMarkdownContent = await this.app.vault.read(file);
-                        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                         if (!formatOperationResult.error && formatOperationResult.formatted) {
                             const selections = editor.listSelections();
@@ -337,6 +375,22 @@ export default class LintAndFormatPlugin extends Plugin {
     onunload() {
         this.lintStatusBarElement?.remove();
         this.formatStatusBarElement?.remove();
+    }
+
+    private async readCustomStylesheet(): Promise<string> {
+        const customPath = this.settings.pdfExportConfig.customStylesheetPath?.trim();
+        if (!customPath) {
+            return '';
+        }
+        try {
+            const fileExists = await this.app.vault.adapter.exists(customPath);
+            if (!fileExists) {
+                return '';
+            }
+            return await this.app.vault.adapter.read(customPath);
+        } catch {
+            return '';
+        }
     }
 
     async loadSettings() {
@@ -404,7 +458,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         const currentMarkdownContent = view.editor.getValue();
-        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
         if (formatOperationResult.error) {
             new Notice(`Formatting error: ${formatOperationResult.error}`);

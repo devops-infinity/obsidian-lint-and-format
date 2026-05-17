@@ -37,12 +37,16 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
         this.addGeneralSettings(containerEl);
         this.addFormatSettings(containerEl);
         this.addPostProcessingFeatures(containerEl);
+        this.addTocStylingSettings(containerEl);
         this.addLintRulesStructure(containerEl);
         this.addLintRulesLists(containerEl);
         this.addLintRulesCodeBlocks(containerEl);
         this.addLintRulesLinksImages(containerEl);
         this.addLintRulesSpacing(containerEl);
         this.addStylePreferences(containerEl);
+        this.addMarkdownRenderingSettings(containerEl);
+        this.addPdfExportSettings(containerEl);
+        this.addRemarkLintSettings(containerEl);
         this.addAboutSection(containerEl);
     }
 
@@ -623,6 +627,296 @@ export class LintAndFormatSettingTab extends PluginSettingTab {
                             await this.plugin.saveSettings();
                         }
                     })
+            );
+    }
+
+    private addTocStylingSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('Table of Contents Styling')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('List style strategy')
+            .setDesc('Numbering and bullet pattern for TOC entries')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('all-bulleted', 'All bulleted')
+                    .addOption('all-numbered', 'All numbered')
+                    .addOption('mixed-top-numbered', 'Top numbered, sub-items bulleted')
+                    .addOption('numbered-until-depth', 'Numbered until depth, bulleted below')
+                    .setValue(this.plugin.settings.tocConfig.listStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.tocConfig.listStyle = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Ordered depth')
+            .setDesc('When "Numbered until depth" is selected, numbering applies up to this depth (1-6)')
+            .addText((text) =>
+                text
+                    .setPlaceholder('1')
+                    .setValue(String(this.plugin.settings.tocConfig.orderedDepth))
+                    .onChange(async (value) => {
+                        const parsed = parseInt(value);
+                        if (!isNaN(parsed) && parsed >= 1 && parsed <= 6) {
+                            this.plugin.settings.tocConfig.orderedDepth = parsed;
+                            await this.plugin.saveSettings();
+                        }
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Bullet marker')
+            .setDesc('Character used for bulleted TOC entries')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('-', '- (dash)')
+                    .addOption('*', '* (asterisk)')
+                    .addOption('+', '+ (plus)')
+                    .setValue(this.plugin.settings.tocConfig.unorderedMarker)
+                    .onChange(async (value) => {
+                        this.plugin.settings.tocConfig.unorderedMarker = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Number marker')
+            .setDesc('Suffix used after numbered TOC entries')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('.', '1. (period)')
+                    .addOption(')', '1) (parenthesis)')
+                    .setValue(this.plugin.settings.tocConfig.orderedMarker)
+                    .onChange(async (value) => {
+                        this.plugin.settings.tocConfig.orderedMarker = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Tight spacing')
+            .setDesc('No blank lines between TOC entries')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.tocConfig.tight).onChange(async (value) => {
+                    this.plugin.settings.tocConfig.tight = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+    }
+
+    private addMarkdownRenderingSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('Markdown Rendering (PDF export pipeline)')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('GitHub-style alerts')
+            .setDesc('Render > [!NOTE] / [!TIP] / [!WARNING] / [!IMPORTANT] / [!CAUTION] / [!DANGER] blockquotes as styled callouts in PDF')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.markdownRenderingConfig.enableGithubAlerts).onChange(async (value) => {
+                    this.plugin.settings.markdownRenderingConfig.enableGithubAlerts = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Math rendering (KaTeX)')
+            .setDesc('Render $inline$ and $$block$$ math expressions in PDF')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.markdownRenderingConfig.enableMathRendering).onChange(async (value) => {
+                    this.plugin.settings.markdownRenderingConfig.enableMathRendering = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+    }
+
+    private addPdfExportSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('PDF Export')
+            .setHeading();
+
+        new Setting(containerEl)
+            .setName('Page size')
+            .setDesc('Paper size for exported PDF')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('A4', 'A4')
+                    .addOption('Letter', 'Letter')
+                    .addOption('Legal', 'Legal')
+                    .addOption('Tabloid', 'Tabloid')
+                    .setValue(this.plugin.settings.pdfExportConfig.pageSize)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pdfExportConfig.pageSize = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Landscape orientation')
+            .setDesc('Export PDF in landscape instead of portrait')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.pdfExportConfig.landscape).onChange(async (value) => {
+                    this.plugin.settings.pdfExportConfig.landscape = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Print background colors')
+            .setDesc('Include background colors and images (callouts, code blocks)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.pdfExportConfig.printBackground).onChange(async (value) => {
+                    this.plugin.settings.pdfExportConfig.printBackground = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Visible heading anchors')
+            .setDesc('Append a # symbol next to each heading in the PDF')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.pdfExportConfig.showHeadingAnchors).onChange(async (value) => {
+                    this.plugin.settings.pdfExportConfig.showHeadingAnchors = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('KaTeX CSS source')
+            .setDesc('How to load KaTeX styles for math rendering')
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption('bundled', 'Bundled (offline-safe)')
+                    .addOption('cdn', 'CDN (jsDelivr)')
+                    .addOption('disabled', 'Disabled (no styles)')
+                    .setValue(this.plugin.settings.pdfExportConfig.katexCssSource)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pdfExportConfig.katexCssSource = value as any;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('Custom stylesheet path')
+            .setDesc('Vault-relative path to an additional CSS file applied after the built-in PDF styles (leave empty for none)')
+            .addText((text) =>
+                text
+                    .setPlaceholder('assets/pdf-custom.css')
+                    .setValue(this.plugin.settings.pdfExportConfig.customStylesheetPath)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pdfExportConfig.customStylesheetPath = value.trim();
+                        await this.plugin.saveSettings();
+                    })
+            );
+    }
+
+    private addRemarkLintSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('Remark Lint Rules')
+            .setHeading();
+
+        containerEl.createEl('p', {
+            text: 'These rules apply when running the "Lint with remark presets" command. They run alongside the existing markdownlint-based checks.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Recommended preset')
+            .setDesc('Enables remark-preset-lint-recommended')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableRecommendedPreset).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableRecommendedPreset = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Consistent preset')
+            .setDesc('Enables remark-preset-lint-consistent')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableConsistentPreset).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableConsistentPreset = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Prettier preset')
+            .setDesc('Enables remark-preset-prettier (style rules aligned with Prettier)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enablePrettierPreset).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enablePrettierPreset = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Heading style rule')
+            .setDesc('Enforce ATX-style headings (# ...)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableHeadingStyleRule).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableHeadingStyleRule = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Maximum heading length rule')
+            .setDesc('Warn when a heading exceeds the configured length')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableMaxHeadingLengthRule).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableMaxHeadingLengthRule = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Maximum heading length')
+            .setDesc('Character limit applied by the "Maximum heading length" rule')
+            .addText((text) =>
+                text
+                    .setPlaceholder('80')
+                    .setValue(String(this.plugin.settings.remarkLintConfig.maxHeadingLength))
+                    .onChange(async (value) => {
+                        const parsed = parseInt(value);
+                        if (!isNaN(parsed) && parsed >= 10 && parsed <= 500) {
+                            this.plugin.settings.remarkLintConfig.maxHeadingLength = parsed;
+                            await this.plugin.saveSettings();
+                        }
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName('No duplicate headings rule')
+            .setDesc('Warn when the same heading appears more than once within a section')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableNoDuplicateHeadingsRule).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableNoDuplicateHeadingsRule = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('No empty URLs rule')
+            .setDesc('Warn when a link or image has an empty URL')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableNoEmptyUrlRule).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableNoEmptyUrlRule = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('No undefined references rule')
+            .setDesc('Warn for [reference] links that have no matching definition (GitHub alert syntax is allowed)')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.remarkLintConfig.enableNoUndefinedReferencesRule).onChange(async (value) => {
+                    this.plugin.settings.remarkLintConfig.enableNoUndefinedReferencesRule = value;
+                    await this.plugin.saveSettings();
+                })
             );
     }
 

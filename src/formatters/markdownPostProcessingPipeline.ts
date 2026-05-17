@@ -1,4 +1,4 @@
-import type { MarkdownPostProcessingConfig, LintRules } from '../core/interfaces';
+import type { MarkdownPostProcessingConfig, LintRules, TocConfig } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { normalizeMarkdownListStructure, collapseConsecutiveBlankLines } from './markdownListNormalizer';
 import { formatAllFencedCodeBlocks, normalizeBashScriptCodeBlocks } from './fencedCodeBlockFormatter';
@@ -15,7 +15,8 @@ export async function applyMarkdownPostProcessing(
     originalDocumentContent: string,
     postProcessingFeatures: MarkdownPostProcessingConfig,
     prettierConfiguration: PrettierMarkdownConfig,
-    lintRules: LintRules
+    lintRules: LintRules,
+    tocConfig: TocConfig
 ): Promise<PostProcessingResult> {
     let workingDocumentContent = originalDocumentContent;
     const appliedTransformations: string[] = [];
@@ -86,7 +87,7 @@ export async function applyMarkdownPostProcessing(
                 workingDocumentContent,
                 postProcessingFeatures.tocDepth,
                 postProcessingFeatures.tocPosition,
-                lintRules,
+                tocConfig,
                 prettierConfiguration
             );
 
