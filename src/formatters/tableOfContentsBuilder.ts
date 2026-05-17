@@ -1,17 +1,13 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkStringify from 'remark-stringify';
-import remarkToc from 'remark-toc';
-import remarkGfm from 'remark-gfm';
-import type { LintRules } from '../core/interfaces';
+import type { TocConfig } from '../core/interfaces';
 import type { PrettierMarkdownConfig } from '../utils/prettierConfig';
 import { extractFrontMatter, reconstructWithFrontMatter, validateYAMLFrontMatter } from '../parsers/yamlFrontMatterParser';
+import { createTableOfContentsProcessor } from './unifiedProcessorFactory';
 
 export async function buildTableOfContentsInMarkdown(
     documentContent: string,
     maximumHeadingDepth: number,
     insertionPosition: 'top' | 'after-frontmatter',
-    lintRules: LintRules,
+    tocConfig: TocConfig,
     prettierConfig: PrettierMarkdownConfig
 ): Promise<string> {
     const { frontMatter, body: documentBodyWithoutFrontMatter, hasFrontMatter } = extractFrontMatter(documentContent);
@@ -37,24 +33,11 @@ export async function buildTableOfContentsInMarkdown(
         }
     }
 
-    const listBulletCharacter = lintRules.unorderedListStyle === 'asterisk' ? '*'
-        : lintRules.unorderedListStyle === 'plus' ? '+'
-        : '-';
-
-    const tableOfContentsConfig = {
-        maxDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
-        tight: true,
-    };
-
-    const unifiedMarkdownProcessor = unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .use(remarkToc, tableOfContentsConfig)
-        .use(remarkStringify, {
-            bullet: listBulletCharacter,
-            listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
-            incrementListMarker: false,
-        });
+    const unifiedMarkdownProcessor = createTableOfContentsProcessor({
+        maximumHeadingDepth: maximumHeadingDepth as 1 | 2 | 3 | 4 | 5 | 6,
+        tocConfig,
+        listItemIndent: prettierConfig.useTabs ? 'tab' : 'one',
+    });
 
     try {
         const transformationResult = await unifiedMarkdownProcessor.process(documentContentWithTocPlaceholder);
@@ -76,7 +59,7 @@ export function removeExistingTableOfContents(documentContent: string): string {
         }
     }
 
-    const tableOfContentsSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?)+/im;
+    const tableOfContentsSectionPattern = /^##?\s+table\s+of\s+contents\s*\n+(?:[-*+]\s+.*\n?|\d+[.)]\s+.*\n?)+/im;
     const documentContentWithoutToc = documentBodyWithoutFrontMatter.replace(tableOfContentsSectionPattern, '');
 
     return reconstructWithFrontMatter(frontMatter, documentContentWithoutToc);

@@ -2,24 +2,87 @@ name: Release Obsidian Plugin
 
 on:
   push:
+    branches:
+      - master
     tags:
-      - "*"
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      plugin_id: ${{ steps.read-manifest.outputs.plugin_id }}
+      version: ${{ steps.read-manifest.outputs.version }}
+      should_release: ${{ steps.decide.outputs.should_release }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Read plugin id and version from manifest.json
+        id: read-manifest
+        run: |
+          PLUGIN_ID=$(jq -r '.id' manifest.json)
+          VERSION=$(jq -r '.version' manifest.json)
+          if [ -z "$PLUGIN_ID" ] || [ "$PLUGIN_ID" = "null" ]; then
+            echo "manifest.json is missing 'id'"
+            exit 1
+          fi
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "manifest.json is missing 'version'"
+            exit 1
+          fi
+          echo "plugin_id=$PLUGIN_ID" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"    >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether a release should be produced
+        id: decide
+        env:
+          VERSION: ${{ steps.read-manifest.outputs.version }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            echo "Triggered by tag push ($REF_NAME). Will release."
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git rev-parse --verify "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "Tag '$VERSION' already exists. Skipping release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "manifest.json version '$VERSION' has no matching tag. Will tag and release."
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-and-release:
+    needs: resolve-version
+    if: needs.resolve-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      PLUGIN_ID: ${{ needs.resolve-version.outputs.plugin_id }}
+      VERSION: ${{ needs.resolve-version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
@@ -28,12 +91,52 @@ jobs:
       - name: Build plugin
         run: npm run build
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - name: Verify build artifacts
+        run: |
+          for required_file in main.js manifest.json; do
+            if [ ! -f "$required_file" ]; then
+              echo "Required build artifact '$required_file' is missing"
+              exit 1
+            fi
+          done
+          if [ ! -f styles.css ]; then
+            : > styles.css
+            echo "styles.css was missing; created empty placeholder for release packaging"
+          fi
+
+      - name: Package plugin folder into zip
+        run: |
+          mkdir -p "release-staging/$PLUGIN_ID"
+          cp main.js manifest.json styles.css "release-staging/$PLUGIN_ID/"
+          (cd release-staging && zip -r "../$PLUGIN_ID-$VERSION.zip" "$PLUGIN_ID")
+          ls -la "$PLUGIN_ID-$VERSION.zip"
+
+      - name: Create or fast-forward release tag (push-to-master path)
+        if: github.ref_type == 'branch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          body: |
+            ## Install (manual)
+            Download `${{ env.PLUGIN_ID }}-${{ env.VERSION }}.zip`, extract it, and copy the resulting `${{ env.PLUGIN_ID }}/` folder into your vault's `.obsidian/plugins/` directory. Then enable the plugin under Settings → Community Plugins.
+
+            ## Install (Obsidian community catalogue)
+            Obsidian fetches `main.js`, `manifest.json`, and `styles.css` directly from this release. No manual steps required for users installing through the in-app community plugin browser.
           files: |
             main.js
             manifest.json
             styles.css
+            ${{ env.PLUGIN_ID }}-${{ env.VERSION }}.zip
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true

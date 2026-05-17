@@ -39,6 +39,7 @@ Keep your Obsidian notes clean and consistent with professional markdown linting
         - [Lint Errors Seem Incorrect](#lint-errors-seem-incorrect)
     - [Development](#development)
         - [Prerequisites](#prerequisites)
+        - [Quick Setup (Recommended)](#quick-setup-recommended)
         - [Setting Up Development Environment](#setting-up-development-environment)
         - [Project Structure](#project-structure)
         - [Available Scripts](#available-scripts)
@@ -325,6 +326,32 @@ Before you begin, make sure you have these installed:
 - **Git** - For version control and cloning the repository
 - **TypeScript** - Knowledge of TypeScript is recommended
 - **Obsidian** - For testing the plugin in a real environment
+
+### Quick Setup (Recommended)
+
+A single command takes the repository from a fresh clone to a plugin-enable-ready state by installing dependencies and producing `main.js`.
+
+From the repository root, run either of the following:
+
+```bash
+npm run setup
+```
+
+Or invoke the script directly:
+
+```bash
+./build-plugin.sh
+```
+
+What it does:
+
+1. Validates `package.json`, `manifest.json`, `esbuild.config.mjs`, and the presence of Node.js and npm
+2. Runs `npm install` (only when `node_modules` is missing or stale relative to `package-lock.json`)
+3. Runs `npm run build` to bundle `src/main.ts` into `main.js` via esbuild
+4. Verifies that `main.js` was produced and is non-empty
+5. Prints a build summary (plugin id, version, total runtime)
+
+After the script completes, open Obsidian → Settings → Community plugins, then disable and re-enable "Lint & Format" to load the freshly built `main.js`.
 
 ### Setting Up Development Environment
 

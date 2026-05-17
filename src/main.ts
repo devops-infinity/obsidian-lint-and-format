@@ -1,4 +1,5 @@
-import { Editor, MarkdownView, Notice, Plugin, TFile, setIcon } from 'obsidian';
+import { Editor, FileSystemAdapter, MarkdownView, Notice, Platform, Plugin, TFile, setIcon } from 'obsidian';
+import * as path from 'path';
 import type { PluginSettings, LintResult } from './core/interfaces';
 import { DEFAULT_SETTINGS } from './pluginSettingsDefaults';
 import { formatMarkdown } from './formatters/markdownFormatter';
@@ -6,6 +7,9 @@ import { registerHeroicons } from './utils/heroicons';
 import { LintValidationDialog } from './components/lintValidationDialog';
 import { LintAndFormatSettingTab } from './settings/pluginSettingsPanel';
 import { LintValidationService } from './services/lintValidationService';
+import { renderMarkdownToStandaloneHtml } from './formatters/markdownToHtmlPipeline';
+import { exportHtmlToPdf } from './services/pdfExportService';
+import { runRemarkLint } from './services/remarkLintService';
 
 export default class LintAndFormatPlugin extends Plugin {
     settings: PluginSettings;
@@ -23,7 +27,7 @@ export default class LintAndFormatPlugin extends Plugin {
             this.settings.prettierConfig,
             this.settings.uiConfig.modalDisplayDelay,
             this.settings.uiConfig.maxAutoFixIterations,
-            this.settings.lintAdvancedConfig
+            this.settings.lintTuningConfig
         );
 
         registerHeroicons();
@@ -52,7 +56,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 }
 
                 const currentMarkdownContent = editor.getValue();
-                const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                 if (formatOperationResult.error) {
                     new Notice(`Formatting error: ${formatOperationResult.error}`);
@@ -144,7 +148,7 @@ export default class LintAndFormatPlugin extends Plugin {
                 let formattedMarkdownContent = currentMarkdownContent;
 
                 if (this.settings.enableAutoFormat) {
-                    const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                    const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                     if (formatOperationResult.error) {
                         new Notice(`Formatting error: ${formatOperationResult.error}`);
@@ -220,6 +224,91 @@ export default class LintAndFormatPlugin extends Plugin {
             },
         });
 
+        this.addCommand({
+            id: 'export-pdf-with-working-links',
+            name: 'Export to PDF (with working links)',
+            editorCallback: async (editor: Editor, view: MarkdownView) => {
+                if (!Platform.isDesktop) {
+                    new Notice('PDF export is only available on desktop Obsidian.');
+                    return;
+                }
+
+                const sourceFile = view.file;
+                if (!sourceFile) {
+                    new Notice('No active note to export.');
+                    return;
+                }
+
+                const vaultAdapter = this.app.vault.adapter;
+                if (!(vaultAdapter instanceof FileSystemAdapter)) {
+                    new Notice('PDF export requires a local filesystem vault.');
+                    return;
+                }
+
+                const markdownContent = editor.getValue();
+                const documentTitle = sourceFile.basename;
+                const exportingNotice = new Notice(`Exporting "${documentTitle}" to PDF...`, 0);
+
+                try {
+                    const customStylesheetContent = await this.readCustomStylesheet();
+
+                    const standaloneHtml = await renderMarkdownToStandaloneHtml(markdownContent, {
+                        documentTitle,
+                        renderingConfig: this.settings.markdownRenderingConfig,
+                        pdfExportConfig: this.settings.pdfExportConfig,
+                        customStylesheetContent,
+                    });
+
+                    const vaultBasePath = vaultAdapter.getBasePath();
+                    const relativeOutputPath = sourceFile.path.replace(/\.(md|markdown|mdx)$/i, '.pdf');
+                    const absoluteOutputPath = path.join(vaultBasePath, relativeOutputPath);
+
+                    const exportResult = await exportHtmlToPdf({
+                        htmlContent: standaloneHtml,
+                        outputPath: absoluteOutputPath,
+                        vaultBasePath,
+                        pdfConfig: this.settings.pdfExportConfig,
+                    });
+
+                    exportingNotice.hide();
+                    new Notice(`PDF exported: ${path.basename(exportResult.outputPath)} (${formatByteSize(exportResult.sizeBytes)})`);
+                } catch (pdfExportError) {
+                    exportingNotice.hide();
+                    const errorMessage = pdfExportError instanceof Error ? pdfExportError.message : String(pdfExportError);
+                    new Notice(`PDF export failed: ${errorMessage}`);
+                }
+            },
+        });
+
+        this.addCommand({
+            id: 'lint-with-remark-presets',
+            name: 'Lint with remark presets',
+            editorCallback: async (editor: Editor, _view: MarkdownView) => {
+                const markdownContent = editor.getValue();
+                const lintingNotice = new Notice('Running remark lint...', 0);
+
+                try {
+                    const remarkReport = await runRemarkLint(markdownContent, this.settings.remarkLintConfig);
+                    lintingNotice.hide();
+
+                    if (remarkReport.totalMessages === 0) {
+                        new Notice('Remark lint: no issues found.');
+                        return;
+                    }
+
+                    const headline = `Remark lint: ${remarkReport.errorCount} error(s), ${remarkReport.warningCount} warning(s)`;
+                    const preview = remarkReport.messages.slice(0, 5)
+                        .map((issue) => `L${issue.line}: ${issue.rule} — ${issue.message}`)
+                        .join('\n');
+                    new Notice(`${headline}\n${preview}${remarkReport.messages.length > 5 ? `\n…+${remarkReport.messages.length - 5} more` : ''}`, 8000);
+                } catch (remarkLintError) {
+                    lintingNotice.hide();
+                    const errorMessage = remarkLintError instanceof Error ? remarkLintError.message : String(remarkLintError);
+                    new Notice(`Remark lint failed: ${errorMessage}`);
+                }
+            },
+        });
+
         this.addSettingTab(new LintAndFormatSettingTab(this.app, this));
 
         if (this.settings.formatOnSave) {
@@ -244,7 +333,7 @@ export default class LintAndFormatPlugin extends Plugin {
                         const scrollInfo = editor.getScrollInfo();
 
                         const currentMarkdownContent = await this.app.vault.read(file);
-                        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+                        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
                         if (!formatOperationResult.error && formatOperationResult.formatted) {
                             const selections = editor.listSelections();
@@ -289,8 +378,29 @@ export default class LintAndFormatPlugin extends Plugin {
         this.formatStatusBarElement?.remove();
     }
 
+    private async readCustomStylesheet(): Promise<string> {
+        const customPath = this.settings.pdfExportConfig.customStylesheetPath?.trim();
+        if (!customPath) {
+            return '';
+        }
+        try {
+            const fileExists = await this.app.vault.adapter.exists(customPath);
+            if (!fileExists) {
+                return '';
+            }
+            return await this.app.vault.adapter.read(customPath);
+        } catch {
+            return '';
+        }
+    }
+
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const persistedSettings = (await this.loadData()) as Record<string, unknown> | null;
+        if (persistedSettings && 'lintAdvancedConfig' in persistedSettings && !('lintTuningConfig' in persistedSettings)) {
+            persistedSettings.lintTuningConfig = persistedSettings.lintAdvancedConfig;
+            delete persistedSettings.lintAdvancedConfig;
+        }
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, persistedSettings);
     }
 
     async saveSettings() {
@@ -349,7 +459,7 @@ export default class LintAndFormatPlugin extends Plugin {
         }
 
         const currentMarkdownContent = view.editor.getValue();
-        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig);
+        const formatOperationResult = await formatMarkdown(currentMarkdownContent, this.settings.prettierConfig, this.settings.lintRules, this.settings.postProcessingConfig, this.settings.tocConfig);
 
         if (formatOperationResult.error) {
             new Notice(`Formatting error: ${formatOperationResult.error}`);
@@ -436,4 +546,10 @@ export default class LintAndFormatPlugin extends Plugin {
                 break;
         }
     }
+}
+
+function formatByteSize(byteCount: number): string {
+    if (byteCount < 1024) return `${byteCount} B`;
+    if (byteCount < 1024 * 1024) return `${(byteCount / 1024).toFixed(1)} KB`;
+    return `${(byteCount / (1024 * 1024)).toFixed(2)} MB`;
 }

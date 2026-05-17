@@ -53,13 +53,42 @@ export const DEFAULT_SETTINGS: PluginSettings = {
             idle: 0.8,
         },
     },
-    lintAdvancedConfig: {
+    lintTuningConfig: {
         brSpaces: 2,
         maxBlankLines: 1,
         headingLinesAbove: 1,
         headingLinesBelow: 1,
         listMarkerSpaces: 1,
         tabIndent: 1,
+    },
+    tocConfig: {
+        listStyle: 'all-bulleted',
+        orderedDepth: 1,
+        unorderedMarker: '-',
+        orderedMarker: '.',
+        tight: true,
+    },
+    pdfExportConfig: {
+        pageSize: 'A4',
+        landscape: false,
+        printBackground: true,
+        showHeadingAnchors: false,
+        katexCssSource: 'bundled',
+        customStylesheetPath: '',
+    },
+    markdownRenderingConfig: {
+        enableGithubAlerts: true,
+        enableMathRendering: true,
+    },
+    remarkLintConfig: {
+        enableRecommendedPreset: true,
+        enableConsistentPreset: true,
+        enableHeadingStyleRule: true,
+        enableMaxHeadingLengthRule: true,
+        maxHeadingLength: 80,
+        enableNoDuplicateHeadingsRule: true,
+        enableNoEmptyUrlRule: true,
+        enableNoUndefinedReferencesRule: true,
     },
     designSystem: {
         fontSize: {
